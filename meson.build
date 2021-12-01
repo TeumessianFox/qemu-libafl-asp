@@ -605,6 +605,14 @@ if targetos == 'linux' and (have_system or have_tools)
                        kwargs: static_kwargs)
 endif
 
+gmp = not_found
+if targetos == 'linux' and (have_system or have_tools)
+  gmp = dependency('gmp',
+                       method: 'pkg-config',
+                       required: get_option('gmp'),
+                       kwargs: static_kwargs)
+endif
+
 mpathlibs = [libudev]
 mpathpersist = not_found
 mpathpersist_new_api = false
@@ -3437,6 +3445,7 @@ summary_info += {'capstone':          capstone_opt == 'internal' ? capstone_opt 
 summary_info += {'libpmem support':   libpmem}
 summary_info += {'libdaxctl support': libdaxctl}
 summary_info += {'libudev':           libudev}
+summary_info += {'gmp':               gmp}
 # Dummy dependency, keep .found()
 summary_info += {'FUSE lseek':        fuse_lseek.found()}
 summary(summary_info, bool_yn: true, section: 'Dependencies')
