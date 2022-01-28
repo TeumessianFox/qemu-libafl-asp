@@ -42,13 +42,13 @@ static PSPMiscReg psp_regs[] = {
     {
         /* The on chip bootloader waits for bit 0 to go 1 */
         .addr = 0x5e000,
-        .val = 0x1, 
+        .val = 0x1,
     },
-    { 
+    {
         /* The off chip bootloader wants bit 5 to be one, otherwise it returns an error
          * dubbed PSPSTATUS_CCX_SEC_BISI_EN_NOT_SET_IN_FUSE_RAM. */
         .addr = 0x5d0cc,
-        .val = BIT(5), 
+        .val = BIT(5),
 
     },
     {
@@ -215,7 +215,7 @@ static void psp_smn_write(void *opaque, hwaddr offset, uint64_t value,
 }
 
 static uint64_t psp_smn_read(void *opaque, hwaddr offset, unsigned int size) {
-    
+
     PSPSmnState *smn = PSP_SMN(opaque);
     uint32_t idx;
     uint32_t val = 0;
@@ -263,10 +263,10 @@ static void psp_smn_init(Object *obj)
 
     object_initialize_child(obj, "smn_misc", &s->psp_smn_misc,
                             TYPE_PSP_MISC);
-    
+
     object_initialize_child(obj, "smn_flash", &s->psp_smn_flash,
                             TYPE_PSP_SMN_FLASH);
-    
+
     object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
                              0xFFFFFFFF, &error_abort);
 
@@ -283,7 +283,7 @@ static void psp_smn_init_slots(DeviceState *dev) {
     int i;
     char name[PSP_SMN_SLOT_NAME_LEN] = { 0 };
     hwaddr slot_offset;
-    
+
     for(i = 0; i < PSP_SMN_SLOT_COUNT; i++) {
         /* The SMN MMIO region of the PSP */
         snprintf(name, PSP_SMN_SLOT_NAME_LEN, "%s%d", PSP_SMN_SLOT_NAME, i);
@@ -300,7 +300,7 @@ static void psp_smn_init_slots(DeviceState *dev) {
         /* Map the containers to the PSP address space */
         slot_offset = s->psp_smn_base + i * PSP_SMN_SLOT_SIZE;
 
-        memory_region_add_subregion_overlap(get_system_memory(), slot_offset, 
+        memory_region_add_subregion_overlap(get_system_memory(), slot_offset,
                                             &s->psp_smn_containers[i], 0);
 
     }
@@ -312,7 +312,7 @@ static void psp_smn_realize(DeviceState *dev, Error **errp) {
     SysBusDevice *sbd = SYS_BUS_DEVICE(dev);
     MemoryRegion *mr_smn_misc;
     PSPSmnFlashState* flash;
-    
+
     /* The SMN address space. Independent from the PSP address space */
     memory_region_init(&s->psp_smn_space, OBJECT(dev), "smn-address-space",
                        0xFFFFFFFF);
@@ -330,13 +330,12 @@ static void psp_smn_realize(DeviceState *dev, Error **errp) {
 
     mr_smn_misc = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->psp_smn_misc), 0);
     memory_region_add_subregion_overlap(&s->psp_smn_space, 0x0, mr_smn_misc,
-                                        -1000); 
+                                        -1000);
 
     /* Map the flash region into the SMN address space */
     flash = &s->psp_smn_flash;
     memory_region_add_subregion_overlap(&s->psp_smn_space, PSP_SMN_FLASH_BASE,
                                         &flash->psp_smn_flash, 0);
-                                        
 
     /* Setup the initial SMN to PSP MemoryRegion alias. */
     psp_smn_init_slots(dev);

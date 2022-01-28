@@ -40,7 +40,7 @@ static void zen_init(MachineState *machine) {
 
     psp = AMD_PSP(object_new(TYPE_AMD_PSP));
     object_property_add_child(OBJECT(machine), "soc", OBJECT(psp));
-    
+
     /* Why do we call "... unref" ? */
     //object_unref(OBJECT(psp));
 

@@ -34,7 +34,7 @@
 #include "qemu/log.h"
 #include "hw/arm/psp-x86.h"
 
-static PSPMiscReg psp_regs[] = { 
+static PSPMiscReg psp_regs[] = {
     {
         /* The off chip bootloader waits for bits 0-2 to be set. */
         .addr = 0xfed81e77,
@@ -57,7 +57,7 @@ static uint32_t psp_x86_ctrl_read(PSPX86State *s, uint32_t slot_id,
   } else {
         slot = &s->psp_x86_slots[slot_id];
         ret = slot->ctrl_regs[reg_id];
-        qemu_log_mask(LOG_UNIMP, "PSP X86: Read slot %d reg %d val 0x%x\n", 
+        qemu_log_mask(LOG_UNIMP, "PSP X86: Read slot %d reg %d val 0x%x\n",
                       slot_id, reg_id, ret);
   }
 
@@ -79,7 +79,7 @@ static void psp_x86_map_slot(PSPX86State *s, uint32_t slot_id) {
 }
 
 static void psp_x86_ctrl_write(PSPX86State *s, uint32_t slot_id, PSPX86RegId reg_id,
-                               uint32_t val) { 
+                               uint32_t val) {
     PSPX86Slot *slot;
 
     if (slot_id >= PSP_X86_SLOT_COUNT) {
@@ -93,12 +93,10 @@ static void psp_x86_ctrl_write(PSPX86State *s, uint32_t slot_id, PSPX86RegId reg
             psp_x86_map_slot(s, slot_id);
 
         }
-        qemu_log_mask(LOG_UNIMP, "PSP X86: Write slot %d reg %d val 0x%x\n", 
+        qemu_log_mask(LOG_UNIMP, "PSP X86: Write slot %d reg %d val 0x%x\n",
                       slot_id, reg_id, val);
 
     }
-    
-
 }
 
 static void psp_x86_ctrl1_write(void *opaque, hwaddr offset, uint64_t value,
@@ -119,7 +117,6 @@ static void psp_x86_ctrl1_write(void *opaque, hwaddr offset, uint64_t value,
         psp_x86_ctrl_write(s, slot_id, reg_id, value);
 
     }
-
 }
 
 static uint64_t psp_x86_ctrl1_read(void *opaque, hwaddr offset, unsigned int size) {
@@ -154,11 +151,11 @@ static void psp_x86_ctrl2_write(void *opaque, hwaddr offset, uint64_t value,
 
     slot_id = offset / sizeof(uint32_t);
     reg_id = X86_UNKNOWN4;
-    
+
     if (size != sizeof(uint32_t)) {
         qemu_log_mask(LOG_GUEST_ERROR, "PSP X86 Error: Unimplemented register" \
                       " access size %d\n", size);
-    } else { 
+    } else {
         psp_x86_ctrl_write(s, slot_id, reg_id, value);
     }
 
@@ -174,12 +171,12 @@ static uint64_t psp_x86_ctrl2_read(void *opaque, hwaddr offset, unsigned int siz
 
     slot_id = offset / sizeof(uint32_t);
     reg_id = X86_UNKNOWN4;
-    
+
     if (size != sizeof(uint32_t)) {
         qemu_log_mask(LOG_GUEST_ERROR, "PSP X86 Error: Unimplemented register" \
                       " acces size %d\n", size);
         ret = 0;
-    } else { 
+    } else {
         ret = psp_x86_ctrl_read(s, slot_id, reg_id);
     }
 
@@ -196,11 +193,11 @@ static void psp_x86_ctrl3_write(void *opaque, hwaddr offset, uint64_t value,
 
     slot_id = offset / sizeof(uint32_t);
     reg_id = X86_UNKNOWN5;
-    
+
     if (size != sizeof(uint32_t)) {
         qemu_log_mask(LOG_GUEST_ERROR, "PSP X86 Error: Unimplemented register" \
                       " access size %d\n", size);
-    } else { 
+    } else {
         psp_x86_ctrl_write(s, slot_id, reg_id, value);
     }
 
@@ -217,12 +214,12 @@ static uint64_t psp_x86_ctrl3_read(void *opaque, hwaddr offset, unsigned int siz
 
     slot_id = offset / sizeof(uint32_t);
     reg_id = X86_UNKNOWN5;
-    
+
     if (size != sizeof(uint32_t)) {
         qemu_log_mask(LOG_GUEST_ERROR, "PSP X86 Error: Unimplemented register" \
                       " acces size %d\n", size);
         ret = 0;
-    } else { 
+    } else {
         ret = psp_x86_ctrl_read(s, slot_id, reg_id);
     }
 
@@ -298,7 +295,7 @@ static void psp_x86_init_slots(DeviceState *dev) {
         /* Map the containers to the PSP address space */
         slot_offset = s->psp_x86_base + i * PSP_X86_SLOT_SIZE;
 
-        memory_region_add_subregion_overlap(get_system_memory(), slot_offset, 
+        memory_region_add_subregion_overlap(get_system_memory(), slot_offset,
                                             &s->psp_x86_containers[i], 0);
 
     }
@@ -308,19 +305,19 @@ static void psp_x86_realize(DeviceState *dev, Error **errp) {
     PSPX86State *s = PSP_X86(dev);
     SysBusDevice *sbd = SYS_BUS_DEVICE(dev);
     MemoryRegion *mr_x86_misc;
-    
+
     /* The X86 control register regions */
-    memory_region_init_io(&s->psp_x86_control1, OBJECT(dev), &x86_ctlr1_ops, 
+    memory_region_init_io(&s->psp_x86_control1, OBJECT(dev), &x86_ctlr1_ops,
                           s, "psp-x86-ctrl1", PSP_X86_CTLR1_SIZE);
-    
+
     sysbus_init_mmio(sbd, &s->psp_x86_control1);
 
-    memory_region_init_io(&s->psp_x86_control2, OBJECT(dev), &x86_ctlr2_ops, 
+    memory_region_init_io(&s->psp_x86_control2, OBJECT(dev), &x86_ctlr2_ops,
                           s, "psp-x86-ctrl2", PSP_X86_CTLR2_SIZE);
 
     sysbus_init_mmio(sbd, &s->psp_x86_control2);
-    
-    memory_region_init_io(&s->psp_x86_control3, OBJECT(dev), &x86_ctlr3_ops, 
+
+    memory_region_init_io(&s->psp_x86_control3, OBJECT(dev), &x86_ctlr3_ops,
                           s, "psp-x86-ctrl3", PSP_X86_CTLR3_SIZE);
 
     sysbus_init_mmio(sbd, &s->psp_x86_control3);
@@ -340,7 +337,7 @@ static void psp_x86_realize(DeviceState *dev, Error **errp) {
 
     mr_x86_misc = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->psp_x86_misc), 0);
     memory_region_add_subregion_overlap(&s->psp_x86_space, 0x0, mr_x86_misc,
-                                        -1000); 
+                                        -1000);
 
     psp_x86_init_slots(dev);
 

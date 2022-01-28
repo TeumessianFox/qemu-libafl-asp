@@ -38,7 +38,7 @@ static uint64_t psp_timer_read(void *opaque, hwaddr offset, unsigned int size) {
     hwaddr phys_base = s->psp_timer_iomem.addr;
 
     if (size != sizeof(uint32_t)) {
-        qemu_log_mask(LOG_UNIMP, 
+        qemu_log_mask(LOG_UNIMP,
                       "PSP Timer: Error. Unsupported read size at offset 0x%" \
                       HWADDR_PRIx "\n", phys_base + offset);
         return 0;
@@ -57,7 +57,7 @@ static uint64_t psp_timer_read(void *opaque, hwaddr offset, unsigned int size) {
             val = 0;
             break;
     }
-    qemu_log_mask(LOG_UNIMP, 
+    qemu_log_mask(LOG_UNIMP,
                   "PSP Timer: Read at 0x%" HWADDR_PRIx " .Returning 0x%lx\n",
                   phys_base + offset, val);
 
@@ -74,7 +74,7 @@ static void psp_timer_write(void *opaque, hwaddr offset, uint64_t val,
 
 
     if (size != sizeof(uint32_t) && size != sizeof(uint8_t)) {
-        qemu_log_mask(LOG_UNIMP, 
+        qemu_log_mask(LOG_UNIMP,
                       "PSP Timer: Error. Unsupported write size (%d) at offset 0x%" \
                       HWADDR_PRIx " with val 0x%lx\n", size, phys, val);
         return;
@@ -97,9 +97,6 @@ static void psp_timer_write(void *opaque, hwaddr offset, uint64_t val,
             break;
 
     }
-
-
-
 }
 
 

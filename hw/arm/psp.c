@@ -67,7 +67,7 @@ static PSPMiscReg psp_regs[] = {
     {
         /* TODO: Document from PSPEmu */
         .addr = 0x0320004c,
-        .val = 0xbc090072, 
+        .val = 0xbc090072,
     },
 };
 
@@ -95,11 +95,11 @@ static void amd_psp_init(Object *obj)
     object_initialize_child(obj, "x86", &s->x86, TYPE_PSP_X86);
 
     object_initialize_child(obj, "base_mem", &s->base_mem, TYPE_PSP_MISC);
-    
+
     object_initialize_child(obj, "timer1", &s->timer1,TYPE_PSP_TIMER);
-    
+
     object_initialize_child(obj, "timer2", &s->timer2, TYPE_PSP_TIMER);
-    
+
     object_initialize_child(obj, "psp-sts", &s->sts, TYPE_PSP_STS);
 
     object_initialize_child(obj, "psp-ccp", &s->ccp, TYPE_CCP_V5);
@@ -140,7 +140,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
         return;
     }
 
-    object_property_set_str(OBJECT(&s->base_mem), "psp_misc_ident", 
+    object_property_set_str(OBJECT(&s->base_mem), "psp_misc_ident",
                             "BASE MEM", &error_abort);
     if (err != NULL) {
         error_propagate(errp, err);
@@ -170,7 +170,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
 
     /* Map X86 control registers */
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 0, PSP_X86_CTRL1_BASE);
-    
+
     /* Map X86 control registers */
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 1, PSP_X86_CTRL2_BASE);
 
@@ -183,7 +183,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
 
     /* Map PSP Status port */
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->sts), 0, PSP_STS_ZEN1_BASE);
-    
+
     /* Map CCP */
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccp), 0, PSP_CCP_BASE);
 

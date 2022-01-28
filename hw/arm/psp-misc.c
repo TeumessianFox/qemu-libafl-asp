@@ -70,7 +70,6 @@ static void psp_misc_write(void *opaque, hwaddr offset, uint64_t value,
 
 static uint64_t psp_misc_read(void *opaque, hwaddr offset, unsigned int size)
 {
-    
     PSPMiscState *misc = PSP_MISC(opaque);
     hwaddr phys_abs;
     int i;
@@ -108,11 +107,11 @@ static void psp_misc_init(Object *obj)
 
     s->mmio_size = 0;
     s->ident = NULL;
-    
+
     /* TODO: What is the difference to e.g. DEFINE_PROP_UINT32 ? */
     object_property_add_uint64_ptr(obj,"psp_misc_msize", &s->mmio_size,
                                    OBJ_PROP_FLAG_READWRITE);
-    
+
     object_property_add_str(obj,"psp_misc_ident",psp_misc_get_identifier,
                             psp_misc_set_identifier);
 
