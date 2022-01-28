@@ -1443,13 +1443,13 @@ static void * const qemu_ld_helpers[MO_SSIZE + 1] = {
 #ifdef HOST_WORDS_BIGENDIAN
     [MO_UW] = helper_be_lduw_mmu,
     [MO_UL] = helper_be_ldul_mmu,
-    [MO_Q]  = helper_be_ldq_mmu,
+    [MO_UQ] = helper_be_ldq_mmu,
     [MO_SW] = helper_be_ldsw_mmu,
     [MO_SL] = helper_be_ldul_mmu,
 #else
     [MO_UW] = helper_le_lduw_mmu,
     [MO_UL] = helper_le_ldul_mmu,
-    [MO_Q]  = helper_le_ldq_mmu,
+    [MO_UQ] = helper_le_ldq_mmu,
     [MO_SW] = helper_le_ldsw_mmu,
     [MO_SL] = helper_le_ldul_mmu,
 #endif
@@ -1694,7 +1694,7 @@ static bool tcg_out_qemu_ld_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
     default:
         tcg_out_mov_reg(s, COND_AL, datalo, TCG_REG_R0);
         break;
-    case MO_Q:
+    case MO_UQ:
         if (datalo != TCG_REG_R1) {
             tcg_out_mov_reg(s, COND_AL, datalo, TCG_REG_R0);
             tcg_out_mov_reg(s, COND_AL, datahi, TCG_REG_R1);
@@ -1781,7 +1781,7 @@ static void tcg_out_qemu_ld_index(TCGContext *s, MemOp opc,
     case MO_UL:
         tcg_out_ld32_r(s, COND_AL, datalo, addrlo, addend);
         break;
-    case MO_Q:
+    case MO_UQ:
         /* Avoid ldrd for user-only emulation, to handle unaligned.  */
         if (USING_SOFTMMU && use_armv6_instructions
             && (datalo & 1) == 0 && datahi == datalo + 1) {
@@ -1824,7 +1824,7 @@ static void tcg_out_qemu_ld_direct(TCGContext *s, MemOp opc, TCGReg datalo,
     case MO_UL:
         tcg_out_ld32_12(s, COND_AL, datalo, addrlo, 0);
         break;
-    case MO_Q:
+    case MO_UQ:
         /* Avoid ldrd for user-only emulation, to handle unaligned.  */
         if (USING_SOFTMMU && use_armv6_instructions
             && (datalo & 1) == 0 && datahi == datalo + 1) {
@@ -2523,8 +2523,13 @@ static void tcg_out_ld(TCGContext *s, TCGType type, TCGReg arg,
         tcg_out_vldst(s, INSN_VLD1 | 0x7d0, arg, arg1, arg2);
         return;
     case TCG_TYPE_V128:
-        /* regs 2; size 8; align 16 */
-        tcg_out_vldst(s, INSN_VLD1 | 0xae0, arg, arg1, arg2);
+        /*
+         * We have only 8-byte alignment for the stack per the ABI.
+         * Rather than dynamically re-align the stack, it's easier
+         * to simply not request alignment beyond that.  So:
+         * regs 2; size 8; align 8
+         */
+        tcg_out_vldst(s, INSN_VLD1 | 0xad0, arg, arg1, arg2);
         return;
     default:
         g_assert_not_reached();
@@ -2543,8 +2548,8 @@ static void tcg_out_st(TCGContext *s, TCGType type, TCGReg arg,
         tcg_out_vldst(s, INSN_VST1 | 0x7d0, arg, arg1, arg2);
         return;
     case TCG_TYPE_V128:
-        /* regs 2; size 8; align 16 */
-        tcg_out_vldst(s, INSN_VST1 | 0xae0, arg, arg1, arg2);
+        /* See tcg_out_ld re alignment: regs 2; size 8; align 8 */
+        tcg_out_vldst(s, INSN_VST1 | 0xad0, arg, arg1, arg2);
         return;
     default:
         g_assert_not_reached();

@@ -6,7 +6,7 @@ asynchronously with QMP protocol servers, as implemented by QEMU, the
 QEMU Guest Agent, and the QEMU Storage Daemon.
 
 `QMPClient` provides the main functionality of this package. All errors
-raised by this library dervive from `AQMPError`, see `aqmp.error` for
+raised by this library derive from `QMPError`, see `aqmp.error` for
 additional detail. See `aqmp.events` for an in-depth tutorial on
 managing QMP events.
 """
@@ -22,25 +22,18 @@ managing QMP events.
 # the COPYING file in the top-level directory.
 
 import logging
-import warnings
 
-from .error import AQMPError
+from .error import QMPError
 from .events import EventListener
 from .message import Message
-from .protocol import ConnectError, Runstate, StateError
+from .protocol import (
+    ConnectError,
+    Runstate,
+    SocketAddrT,
+    StateError,
+)
 from .qmp_client import ExecInterruptedError, ExecuteError, QMPClient
 
-
-_WMSG = """
-
-The Asynchronous QMP library is currently in development and its API
-should be considered highly fluid and subject to change. It should
-not be used by any other scripts checked into the QEMU tree.
-
-Proceed with caution!
-"""
-
-warnings.warn(_WMSG, FutureWarning)
 
 # Suppress logging unless an application engages it.
 logging.getLogger('qemu.aqmp').addHandler(logging.NullHandler())
@@ -55,9 +48,12 @@ __all__ = (
     'Runstate',
 
     # Exceptions, most generic to most explicit
-    'AQMPError',
+    'QMPError',
     'StateError',
     'ConnectError',
     'ExecuteError',
     'ExecInterruptedError',
+
+    # Type aliases
+    'SocketAddrT',
 )

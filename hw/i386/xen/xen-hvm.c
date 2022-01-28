@@ -1087,10 +1087,11 @@ static void handle_ioreq(XenIOState *state, ioreq_t *req)
     }
 }
 
-static int handle_buffered_iopage(XenIOState *state)
+static bool handle_buffered_iopage(XenIOState *state)
 {
     buffered_iopage_t *buf_page = state->buffered_io_page;
     buf_ioreq_t *buf_req = NULL;
+    bool handled_ioreq = false;
     ioreq_t req;
     int qw;
 
@@ -1144,9 +1145,10 @@ static int handle_buffered_iopage(XenIOState *state)
         assert(!req.data_is_ptr);
 
         qatomic_add(&buf_page->read_pointer, qw + 1);
+        handled_ioreq = true;
     }
 
-    return req.count;
+    return handled_ioreq;
 }
 
 static void handle_buffered_io(void *opaque)
@@ -1613,8 +1615,8 @@ void xen_hvm_modified_memory(ram_addr_t start, ram_addr_t length)
 void qmp_xen_set_global_dirty_log(bool enable, Error **errp)
 {
     if (enable) {
-        memory_global_dirty_log_start();
+        memory_global_dirty_log_start(GLOBAL_DIRTY_MIGRATION);
     } else {
-        memory_global_dirty_log_stop();
+        memory_global_dirty_log_stop(GLOBAL_DIRTY_MIGRATION);
     }
 }

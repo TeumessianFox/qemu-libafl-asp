@@ -10,9 +10,10 @@ Synopsis
 Description
 -----------
 
-qemu-storage-daemon provides disk image functionality from QEMU, qemu-img, and
-qemu-nbd in a long-running process controlled via QMP commands without running
-a virtual machine. It can export disk images, run block job operations, and
+``qemu-storage-daemon`` provides disk image functionality from QEMU,
+``qemu-img``, and ``qemu-nbd`` in a long-running process controlled via QMP
+commands without running a virtual machine.
+It can export disk images, run block job operations, and
 perform other disk-related operations. The daemon is controlled via a QMP
 monitor and initial configuration from the command-line.
 
@@ -200,7 +201,7 @@ Export raw image file ``disk.img`` over NBD UNIX domain socket ``nbd.sock``::
       --nbd-server addr.type=unix,addr.path=nbd.sock \
       --export type=nbd,id=export,node-name=disk,writable=on
 
-Export a qcow2 image file ``disk.qcow2`` as a vhosts-user-blk device over UNIX
+Export a qcow2 image file ``disk.qcow2`` as a vhost-user-blk device over UNIX
 domain socket ``vhost-user-blk.sock``::
 
   $ qemu-storage-daemon \

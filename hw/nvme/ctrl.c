@@ -1146,12 +1146,13 @@ static uint16_t nvme_tx(NvmeCtrl *n, NvmeSg *sg, uint8_t *ptr, uint32_t len,
     assert(sg->flags & NVME_SG_ALLOC);
 
     if (sg->flags & NVME_SG_DMA) {
-        uint64_t residual;
+        const MemTxAttrs attrs = MEMTXATTRS_UNSPECIFIED;
+        dma_addr_t residual;
 
         if (dir == NVME_TX_DIRECTION_TO_DEVICE) {
-            residual = dma_buf_write(ptr, len, &sg->qsg);
+            dma_buf_write(ptr, len, &residual, &sg->qsg, attrs);
         } else {
-            residual = dma_buf_read(ptr, len, &sg->qsg);
+            dma_buf_read(ptr, len, &residual, &sg->qsg, attrs);
         }
 
         if (unlikely(residual)) {
@@ -4167,6 +4168,11 @@ static uint16_t nvme_changed_nslist(NvmeCtrl *n, uint8_t rae, uint32_t buf_len,
     uint32_t trans_len;
     int i = 0;
     uint32_t nsid;
+
+    if (off >= sizeof(nslist)) {
+        trace_pci_nvme_err_invalid_log_page_offset(off, sizeof(nslist));
+        return NVME_INVALID_FIELD | NVME_DNR;
+    }
 
     memset(nslist, 0x0, sizeof(nslist));
     trans_len = MIN(sizeof(nslist) - off, buf_len);

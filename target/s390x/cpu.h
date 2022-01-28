@@ -63,6 +63,8 @@ struct CPUS390XState {
     uint64_t etoken;       /* etoken */
     uint64_t etoken_extension; /* etoken extension */
 
+    uint64_t diag318_info;
+
     /* Fields up to this point are not cleared by initial CPU reset */
     struct {} start_initial_reset_fields;
 
@@ -117,8 +119,6 @@ struct CPUS390XState {
     int pending_int;
     uint16_t external_call_addr;
     DECLARE_BITMAP(emergency_signals, S390_MAX_CPUS);
-
-    uint64_t diag318_info;
 
 #if !defined(CONFIG_USER_ONLY)
     uint64_t tlb_fill_tec;   /* translation exception code during tlb_fill */
@@ -673,11 +673,6 @@ QEMU_BUILD_BUG_ON(sizeof(SysIB) != 4096);
 #define SIGP_STAT_INOPERATIVE       0x00000004UL
 #define SIGP_STAT_INVALID_ORDER     0x00000002UL
 #define SIGP_STAT_RECEIVER_CHECK    0x00000001UL
-
-/* SIGP SET ARCHITECTURE modes */
-#define SIGP_MODE_ESA_S390 0
-#define SIGP_MODE_Z_ARCH_TRANS_ALL_PSW 1
-#define SIGP_MODE_Z_ARCH_TRANS_CUR_PSW 2
 
 /* SIGP order code mask corresponding to bit positions 56-63 */
 #define SIGP_ORDER_MASK 0x000000ff

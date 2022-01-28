@@ -29,7 +29,7 @@ from typing import (
     cast,
 )
 
-from .error import AQMPError
+from .error import QMPError
 from .util import (
     bottom_half,
     create_task,
@@ -43,8 +43,12 @@ from .util import (
 
 
 T = TypeVar('T')
+_U = TypeVar('_U')
 _TaskFN = Callable[[], Awaitable[None]]  # aka ``async def func() -> None``
-_FutureT = TypeVar('_FutureT', bound=Optional['asyncio.Future[Any]'])
+
+InternetAddrT = Tuple[str, int]
+UnixAddrT = str
+SocketAddrT = Union[UnixAddrT, InternetAddrT]
 
 
 class Runstate(Enum):
@@ -61,7 +65,7 @@ class Runstate(Enum):
     DISCONNECTING = 3
 
 
-class ConnectError(AQMPError):
+class ConnectError(QMPError):
     """
     Raised when the initial connection process has failed.
 
@@ -79,10 +83,14 @@ class ConnectError(AQMPError):
         self.exc: Exception = exc
 
     def __str__(self) -> str:
-        return f"{self.error_message}: {self.exc!s}"
+        cause = str(self.exc)
+        if not cause:
+            # If there's no error string, use the exception name.
+            cause = exception_summary(self.exc)
+        return f"{self.error_message}: {cause}"
 
 
-class StateError(AQMPError):
+class StateError(QMPError):
     """
     An API command (connect, execute, etc) was issued at an inappropriate time.
 
@@ -253,7 +261,7 @@ class AsyncProtocol(Generic[T]):
 
     @upper_half
     @require(Runstate.IDLE)
-    async def accept(self, address: Union[str, Tuple[str, int]],
+    async def accept(self, address: SocketAddrT,
                      ssl: Optional[SSLContext] = None) -> None:
         """
         Accept a connection and begin processing message queues.
@@ -271,7 +279,7 @@ class AsyncProtocol(Generic[T]):
 
     @upper_half
     @require(Runstate.IDLE)
-    async def connect(self, address: Union[str, Tuple[str, int]],
+    async def connect(self, address: SocketAddrT,
                       ssl: Optional[SSLContext] = None) -> None:
         """
         Connect to the server and begin processing message queues.
@@ -333,7 +341,7 @@ class AsyncProtocol(Generic[T]):
 
     @upper_half
     async def _new_session(self,
-                           address: Union[str, Tuple[str, int]],
+                           address: SocketAddrT,
                            ssl: Optional[SSLContext] = None,
                            accept: bool = False) -> None:
         """
@@ -355,7 +363,7 @@ class AsyncProtocol(Generic[T]):
             This exception will wrap a more concrete one. In most cases,
             the wrapped exception will be `OSError` or `EOFError`. If a
             protocol-level failure occurs while establishing a new
-            session, the wrapped error may also be an `AQMPError`.
+            session, the wrapped error may also be an `QMPError`.
         """
         assert self.runstate == Runstate.IDLE
 
@@ -393,7 +401,7 @@ class AsyncProtocol(Generic[T]):
     @upper_half
     async def _establish_connection(
             self,
-            address: Union[str, Tuple[str, int]],
+            address: SocketAddrT,
             ssl: Optional[SSLContext] = None,
             accept: bool = False
     ) -> None:
@@ -420,7 +428,7 @@ class AsyncProtocol(Generic[T]):
             await self._do_connect(address, ssl)
 
     @upper_half
-    async def _do_accept(self, address: Union[str, Tuple[str, int]],
+    async def _do_accept(self, address: SocketAddrT,
                          ssl: Optional[SSLContext] = None) -> None:
         """
         Acting as the transport server, accept a single connection.
@@ -478,7 +486,7 @@ class AsyncProtocol(Generic[T]):
         self.logger.debug("Connection accepted.")
 
     @upper_half
-    async def _do_connect(self, address: Union[str, Tuple[str, int]],
+    async def _do_connect(self, address: SocketAddrT,
                           ssl: Optional[SSLContext] = None) -> None:
         """
         Acting as the transport client, initiate a connection to a server.
@@ -587,7 +595,8 @@ class AsyncProtocol(Generic[T]):
         """
         Fully reset this object to a clean state and return to `IDLE`.
         """
-        def _paranoid_task_erase(task: _FutureT) -> Optional[_FutureT]:
+        def _paranoid_task_erase(task: Optional['asyncio.Future[_U]']
+                                 ) -> Optional['asyncio.Future[_U]']:
             # Help to erase a task, ENSURING it is fully quiesced first.
             assert (task is None) or task.done()
             return None if (task and task.done()) else task
@@ -623,13 +632,21 @@ class AsyncProtocol(Generic[T]):
         def _done(task: Optional['asyncio.Future[Any]']) -> bool:
             return task is not None and task.done()
 
-        # NB: We can't rely on _bh_tasks being done() here, it may not
-        #     yet have had a chance to run and gather itself.
+        # Are we already in an error pathway? If either of the tasks are
+        # already done, or if we have no tasks but a reader/writer; we
+        # must be.
+        #
+        # NB: We can't use _bh_tasks to check for premature task
+        # completion, because it may not yet have had a chance to run
+        # and gather itself.
         tasks = tuple(filter(None, (self._writer_task, self._reader_task)))
         error_pathway = _done(self._reader_task) or _done(self._writer_task)
+        if not tasks:
+            error_pathway |= bool(self._reader) or bool(self._writer)
 
         try:
-            # Try to flush the writer, if possible:
+            # Try to flush the writer, if possible.
+            # This *may* cause an error and force us over into the error path.
             if not error_pathway:
                 await self._bh_flush_writer()
         except BaseException as err:
@@ -639,7 +656,7 @@ class AsyncProtocol(Generic[T]):
             self.logger.debug("%s:\n%s\n", emsg, pretty_traceback())
             raise
         finally:
-            # Cancel any still-running tasks:
+            # Cancel any still-running tasks (Won't raise):
             if self._writer_task is not None and not self._writer_task.done():
                 self.logger.debug("Cancelling writer task.")
                 self._writer_task.cancel()
@@ -652,7 +669,7 @@ class AsyncProtocol(Generic[T]):
                 self.logger.debug("Waiting for tasks to complete ...")
                 await asyncio.wait(tasks)
 
-            # Lastly, close the stream itself. (May raise):
+            # Lastly, close the stream itself. (*May raise*!):
             await self._bh_close_stream(error_pathway)
             self.logger.debug("Disconnected.")
 

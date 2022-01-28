@@ -183,15 +183,20 @@ static bool nvme_init_queue(BDRVNVMeState *s, NVMeQueue *q,
     return r == 0;
 }
 
+static void nvme_free_queue(NVMeQueue *q)
+{
+    qemu_vfree(q->queue);
+}
+
 static void nvme_free_queue_pair(NVMeQueuePair *q)
 {
-    trace_nvme_free_queue_pair(q->index, q);
+    trace_nvme_free_queue_pair(q->index, q, &q->cq, &q->sq);
     if (q->completion_bh) {
         qemu_bh_delete(q->completion_bh);
     }
+    nvme_free_queue(&q->sq);
+    nvme_free_queue(&q->cq);
     qemu_vfree(q->prp_list_pages);
-    qemu_vfree(q->sq.queue);
-    qemu_vfree(q->cq.queue);
     qemu_mutex_destroy(&q->lock);
     g_free(q);
 }
@@ -201,8 +206,9 @@ static void nvme_free_req_queue_cb(void *opaque)
     NVMeQueuePair *q = opaque;
 
     qemu_mutex_lock(&q->lock);
-    while (qemu_co_enter_next(&q->free_req_queue, &q->lock)) {
-        /* Retry all pending requests */
+    while (q->free_req_head != -1 &&
+           qemu_co_enter_next(&q->free_req_queue, &q->lock)) {
+        /* Retry waiting requests */
     }
     qemu_mutex_unlock(&q->lock);
 }
@@ -514,10 +520,10 @@ static bool nvme_identify(BlockDriverState *bs, int namespace, Error **errp)
 {
     BDRVNVMeState *s = bs->opaque;
     bool ret = false;
-    union {
+    QEMU_AUTO_VFREE union {
         NvmeIdCtrl ctrl;
         NvmeIdNs ns;
-    } *id;
+    } *id = NULL;
     NvmeLBAF *lbaf;
     uint16_t oncs;
     int r;
@@ -595,15 +601,12 @@ static bool nvme_identify(BlockDriverState *bs, int namespace, Error **errp)
     s->blkshift = lbaf->ds;
 out:
     qemu_vfio_dma_unmap(s->vfio, id);
-    qemu_vfree(id);
 
     return ret;
 }
 
-static bool nvme_poll_queue(NVMeQueuePair *q)
+static void nvme_poll_queue(NVMeQueuePair *q)
 {
-    bool progress = false;
-
     const size_t cqe_offset = q->cq.head * NVME_CQ_ENTRY_BYTES;
     NvmeCqe *cqe = (NvmeCqe *)&q->cq.queue[cqe_offset];
 
@@ -614,30 +617,23 @@ static bool nvme_poll_queue(NVMeQueuePair *q)
      * cannot race with itself.
      */
     if ((le16_to_cpu(cqe->status) & 0x1) == q->cq_phase) {
-        return false;
+        return;
     }
 
     qemu_mutex_lock(&q->lock);
     while (nvme_process_completion(q)) {
         /* Keep polling */
-        progress = true;
     }
     qemu_mutex_unlock(&q->lock);
-
-    return progress;
 }
 
-static bool nvme_poll_queues(BDRVNVMeState *s)
+static void nvme_poll_queues(BDRVNVMeState *s)
 {
-    bool progress = false;
     int i;
 
     for (i = 0; i < s->queue_count; i++) {
-        if (nvme_poll_queue(s->queues[i])) {
-            progress = true;
-        }
+        nvme_poll_queue(s->queues[i]);
     }
-    return progress;
 }
 
 static void nvme_handle_event(EventNotifier *n)
@@ -698,8 +694,30 @@ static bool nvme_poll_cb(void *opaque)
     EventNotifier *e = opaque;
     BDRVNVMeState *s = container_of(e, BDRVNVMeState,
                                     irq_notifier[MSIX_SHARED_IRQ_IDX]);
+    int i;
 
-    return nvme_poll_queues(s);
+    for (i = 0; i < s->queue_count; i++) {
+        NVMeQueuePair *q = s->queues[i];
+        const size_t cqe_offset = q->cq.head * NVME_CQ_ENTRY_BYTES;
+        NvmeCqe *cqe = (NvmeCqe *)&q->cq.queue[cqe_offset];
+
+        /*
+         * q->lock isn't needed because nvme_process_completion() only runs in
+         * the event loop thread and cannot race with itself.
+         */
+        if ((le16_to_cpu(cqe->status) & 0x1) != q->cq_phase) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static void nvme_poll_ready(EventNotifier *e)
+{
+    BDRVNVMeState *s = container_of(e, BDRVNVMeState,
+                                    irq_notifier[MSIX_SHARED_IRQ_IDX]);
+
+    nvme_poll_queues(s);
 }
 
 static int nvme_init(BlockDriverState *bs, const char *device, int namespace,
@@ -834,7 +852,8 @@ static int nvme_init(BlockDriverState *bs, const char *device, int namespace,
     }
     aio_set_event_notifier(bdrv_get_aio_context(bs),
                            &s->irq_notifier[MSIX_SHARED_IRQ_IDX],
-                           false, nvme_handle_event, nvme_poll_cb);
+                           false, nvme_handle_event, nvme_poll_cb,
+                           nvme_poll_ready);
 
     if (!nvme_identify(bs, namespace, errp)) {
         ret = -EIO;
@@ -919,7 +938,7 @@ static void nvme_close(BlockDriverState *bs)
     g_free(s->queues);
     aio_set_event_notifier(bdrv_get_aio_context(bs),
                            &s->irq_notifier[MSIX_SHARED_IRQ_IDX],
-                           false, NULL, NULL);
+                           false, NULL, NULL, NULL);
     event_notifier_cleanup(&s->irq_notifier[MSIX_SHARED_IRQ_IDX]);
     qemu_vfio_pci_unmap_bar(s->vfio, 0, s->bar0_wo_map,
                             0, sizeof(NvmeBar) + NVME_DOORBELL_SIZE);
@@ -1219,7 +1238,7 @@ static int nvme_co_prw(BlockDriverState *bs, uint64_t offset, uint64_t bytes,
 {
     BDRVNVMeState *s = bs->opaque;
     int r;
-    uint8_t *buf = NULL;
+    QEMU_AUTO_VFREE uint8_t *buf = NULL;
     QEMUIOVector local_qiov;
     size_t len = QEMU_ALIGN_UP(bytes, qemu_real_host_page_size);
     assert(QEMU_IS_ALIGNED(offset, s->page_size));
@@ -1246,7 +1265,6 @@ static int nvme_co_prw(BlockDriverState *bs, uint64_t offset, uint64_t bytes,
     if (!r && !is_write) {
         qemu_iovec_from_buf(qiov, 0, buf, bytes);
     }
-    qemu_vfree(buf);
     return r;
 }
 
@@ -1365,7 +1383,7 @@ static int coroutine_fn nvme_co_pdiscard(BlockDriverState *bs,
     BDRVNVMeState *s = bs->opaque;
     NVMeQueuePair *ioq = s->queues[INDEX_IO(0)];
     NVMeRequest *req;
-    NvmeDsmRange *buf;
+    QEMU_AUTO_VFREE NvmeDsmRange *buf = NULL;
     QEMUIOVector local_qiov;
     int ret;
 
@@ -1440,7 +1458,6 @@ static int coroutine_fn nvme_co_pdiscard(BlockDriverState *bs,
     trace_nvme_dsm_done(s, offset, bytes, ret);
 out:
     qemu_iovec_destroy(&local_qiov);
-    qemu_vfree(buf);
     return ret;
 
 }
@@ -1517,7 +1534,7 @@ static void nvme_detach_aio_context(BlockDriverState *bs)
 
     aio_set_event_notifier(bdrv_get_aio_context(bs),
                            &s->irq_notifier[MSIX_SHARED_IRQ_IDX],
-                           false, NULL, NULL);
+                           false, NULL, NULL, NULL);
 }
 
 static void nvme_attach_aio_context(BlockDriverState *bs,
@@ -1527,7 +1544,8 @@ static void nvme_attach_aio_context(BlockDriverState *bs,
 
     s->aio_context = new_context;
     aio_set_event_notifier(new_context, &s->irq_notifier[MSIX_SHARED_IRQ_IDX],
-                           false, nvme_handle_event, nvme_poll_cb);
+                           false, nvme_handle_event, nvme_poll_cb,
+                           nvme_poll_ready);
 
     for (unsigned i = 0; i < s->queue_count; i++) {
         NVMeQueuePair *q = s->queues[i];
