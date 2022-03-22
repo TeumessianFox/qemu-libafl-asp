@@ -18,6 +18,7 @@
  */
 
 #include "qemu/osdep.h"
+#include "qemu/log.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
 #include "exec/helper-proto.h"
@@ -694,7 +695,7 @@ void HELPER(rfi)(CPUHPPAState *env)
     cpu_hppa_put_psw(env, env->cr[CR_IPSW]);
 }
 
-void HELPER(rfi_r)(CPUHPPAState *env)
+void HELPER(getshadowregs)(CPUHPPAState *env)
 {
     env->gr[1] = env->shadow[0];
     env->gr[8] = env->shadow[1];
@@ -703,6 +704,11 @@ void HELPER(rfi_r)(CPUHPPAState *env)
     env->gr[17] = env->shadow[4];
     env->gr[24] = env->shadow[5];
     env->gr[25] = env->shadow[6];
+}
+
+void HELPER(rfi_r)(CPUHPPAState *env)
+{
+    helper_getshadowregs(env);
     helper_rfi(env);
 }
 #endif

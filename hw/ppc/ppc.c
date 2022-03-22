@@ -1049,7 +1049,6 @@ const VMStateDescription vmstate_ppc_timebase = {
     .name = "timebase",
     .version_id = 1,
     .minimum_version_id = 1,
-    .minimum_version_id_old = 1,
     .pre_save = timebase_pre_save,
     .fields      = (VMStateField []) {
         VMSTATE_UINT64(guest_timebase, PPCTimebase),
@@ -1064,7 +1063,7 @@ clk_setup_cb cpu_ppc_tb_init (CPUPPCState *env, uint32_t freq)
     PowerPCCPU *cpu = env_archcpu(env);
     ppc_tb_t *tb_env;
 
-    tb_env = g_malloc0(sizeof(ppc_tb_t));
+    tb_env = g_new0(ppc_tb_t, 1);
     env->tb_env = tb_env;
     tb_env->flags = PPC_DECR_UNDERFLOW_TRIGGERED;
     if (is_book3s_arch2x(env)) {
@@ -1073,7 +1072,7 @@ clk_setup_cb cpu_ppc_tb_init (CPUPPCState *env, uint32_t freq)
     }
     /* Create new timer */
     tb_env->decr_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, &cpu_ppc_decr_cb, cpu);
-    if (env->has_hv_mode) {
+    if (env->has_hv_mode && !cpu->vhyp) {
         tb_env->hdecr_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, &cpu_ppc_hdecr_cb,
                                                 cpu);
     } else {
@@ -1084,25 +1083,25 @@ clk_setup_cb cpu_ppc_tb_init (CPUPPCState *env, uint32_t freq)
     return &cpu_ppc_set_tb_clk;
 }
 
-/* Specific helpers for POWER & PowerPC 601 RTC */
-void cpu_ppc601_store_rtcu (CPUPPCState *env, uint32_t value)
+/* cpu_ppc_hdecr_init may be used if the timer is not used by HDEC emulation */
+void cpu_ppc_hdecr_init(CPUPPCState *env)
 {
-    _cpu_ppc_store_tbu(env, value);
+    PowerPCCPU *cpu = env_archcpu(env);
+
+    assert(env->tb_env->hdecr_timer == NULL);
+
+    env->tb_env->hdecr_timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
+                                            &cpu_ppc_hdecr_cb, cpu);
 }
 
-uint32_t cpu_ppc601_load_rtcu (CPUPPCState *env)
+void cpu_ppc_hdecr_exit(CPUPPCState *env)
 {
-    return _cpu_ppc_load_tbu(env);
-}
+    PowerPCCPU *cpu = env_archcpu(env);
 
-void cpu_ppc601_store_rtcl (CPUPPCState *env, uint32_t value)
-{
-    cpu_ppc_store_tbl(env, value & 0x3FFFFF80);
-}
+    timer_free(env->tb_env->hdecr_timer);
+    env->tb_env->hdecr_timer = NULL;
 
-uint32_t cpu_ppc601_load_rtcl (CPUPPCState *env)
-{
-    return cpu_ppc_load_tbl(env) & 0x3FFFFF80;
+    cpu_ppc_hdecr_lower(cpu);
 }
 
 /*****************************************************************************/
@@ -1339,8 +1338,8 @@ clk_setup_cb ppc_40x_timers_init (CPUPPCState *env, uint32_t freq,
 
     trace_ppc40x_timers_init(freq);
 
-    tb_env = g_malloc0(sizeof(ppc_tb_t));
-    ppc40x_timer = g_malloc0(sizeof(ppc40x_timer_t));
+    tb_env = g_new0(ppc_tb_t, 1);
+    ppc40x_timer = g_new0(ppc40x_timer_t, 1);
 
     env->tb_env = tb_env;
     tb_env->flags = PPC_DECR_UNDERFLOW_TRIGGERED;
@@ -1448,7 +1447,7 @@ int ppc_dcr_init (CPUPPCState *env, int (*read_error)(int dcrn),
 {
     ppc_dcr_t *dcr_env;
 
-    dcr_env = g_malloc0(sizeof(ppc_dcr_t));
+    dcr_env = g_new0(ppc_dcr_t, 1);
     dcr_env->read_error = read_error;
     dcr_env->write_error = write_error;
     env->dcr_env = dcr_env;

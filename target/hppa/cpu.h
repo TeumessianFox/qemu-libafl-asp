@@ -69,6 +69,11 @@
 #define EXCP_SYSCALL             30
 #define EXCP_SYSCALL_LWS         31
 
+/* Emulated hardware TOC button */
+#define EXCP_TOC                 32 /* TOC = Transfer of control (NMI) */
+
+#define CPU_INTERRUPT_NMI       CPU_INTERRUPT_TGT_EXT_3         /* TOC */
+
 /* Taken from Linux kernel: arch/parisc/include/asm/psw.h */
 #define PSW_I            0x00000001
 #define PSW_D            0x00000002
@@ -133,8 +138,6 @@
 #define CR_IPSW          22
 #define CR_EIRR          23
 
-typedef struct CPUHPPAState CPUHPPAState;
-
 #if TARGET_REGISTER_BITS == 32
 typedef uint32_t target_ureg;
 typedef int32_t  target_sreg;
@@ -163,7 +166,7 @@ typedef struct {
     unsigned access_id : 16;
 } hppa_tlb_entry;
 
-struct CPUHPPAState {
+typedef struct CPUArchState {
     target_ureg gr[32];
     uint64_t fr[32];
     uint64_t sr[8];          /* stored shifted into place for gva */
@@ -202,7 +205,7 @@ struct CPUHPPAState {
     /* ??? We should use a more intelligent data structure.  */
     hppa_tlb_entry tlb[HPPA_TLB_ENTRIES];
     uint32_t tlb_last;
-};
+} CPUHPPAState;
 
 /**
  * HPPACPU:
@@ -210,7 +213,7 @@ struct CPUHPPAState {
  *
  * An HPPA CPU.
  */
-struct HPPACPU {
+struct ArchCPU {
     /*< private >*/
     CPUState parent_obj;
     /*< public >*/
@@ -219,10 +222,6 @@ struct HPPACPU {
     CPUHPPAState env;
     QEMUTimer *alarm_timer;
 };
-
-
-typedef CPUHPPAState CPUArchState;
-typedef HPPACPU ArchCPU;
 
 #include "exec/cpu-all.h"
 

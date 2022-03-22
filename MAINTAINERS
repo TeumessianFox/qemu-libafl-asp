@@ -286,6 +286,13 @@ F: include/hw/riscv/
 F: linux-user/host/riscv32/
 F: linux-user/host/riscv64/
 
+RISC-V XVentanaCondOps extension
+M: Philipp Tomsich <philipp.tomsich@vrull.eu>
+L: qemu-riscv@nongnu.org
+S: Supported
+F: target/riscv/XVentanaCondOps.decode
+F: target/riscv/insn_trans/trans_xventanacondops.c.inc
+
 RENESAS RX CPUs
 R: Yoshinori Sato <ysato@users.sourceforge.jp>
 S: Orphan
@@ -408,7 +415,7 @@ M: Paolo Bonzini <pbonzini@redhat.com>
 M: Marcelo Tosatti <mtosatti@redhat.com>
 L: kvm@vger.kernel.org
 S: Supported
-F: docs/amd-memory-encryption.txt
+F: docs/system/i386/amd-memory-encryption.rst
 F: docs/system/i386/sgx.rst
 F: target/i386/kvm/
 F: target/i386/sev*
@@ -540,6 +547,12 @@ F: */*win32*
 F: include/*/*win32*
 X: qga/*win32*
 F: qemu.nsi
+
+Darwin (macOS, iOS)
+M: Philippe Mathieu-Daudé <f4bug@amsat.org>
+S: Odd Fixes
+F: .gitlab-ci.d/cirrus/macos-*
+F: */*.m
 
 Alpha Machines
 --------------
@@ -818,7 +831,6 @@ F: docs/system/arm/palm.rst
 
 Raspberry Pi
 M: Peter Maydell <peter.maydell@linaro.org>
-R: Andrew Baumann <Andrew.Baumann@microsoft.com>
 R: Philippe Mathieu-Daudé <f4bug@amsat.org>
 L: qemu-arm@nongnu.org
 S: Odd Fixes
@@ -957,6 +969,12 @@ F: include/hw/ssi/xilinx_spips.h
 F: hw/display/dpcd.c
 F: include/hw/display/dpcd.h
 F: docs/system/arm/xlnx-versal-virt.rst
+
+Xilinx Versal OSPI
+M: Francisco Iglesias <francisco.iglesias@xilinx.com>
+S: Maintained
+F: hw/ssi/xlnx-versal-ospi.c
+F: include/hw/ssi/xlnx-versal-ospi.h
 
 ARM ACPI Subsystem
 M: Shannon Zhao <shannon.zhaosl@gmail.com>
@@ -1807,7 +1825,6 @@ F: docs/specs/acpi_hw_reduced_hotplug.rst
 
 ACPI/VIOT
 M: Jean-Philippe Brucker <jean-philippe@linaro.org>
-R: Ani Sinha <ani@anisinha.ca>
 S: Supported
 F: hw/acpi/viot.c
 F: hw/acpi/viot.h
@@ -2177,6 +2194,7 @@ F: tests/qtest/prom-env-test.c
 
 VM Generation ID
 S: Orphan
+R: Ani Sinha <ani@anisinha.ca>
 F: hw/acpi/vmgenid.c
 F: include/hw/acpi/vmgenid.h
 F: docs/specs/vmgenid.txt
@@ -2192,6 +2210,7 @@ F: hw/misc/led.c
 Unimplemented device
 M: Peter Maydell <peter.maydell@linaro.org>
 R: Philippe Mathieu-Daudé <f4bug@amsat.org>
+R: Ani Sinha <ani@anisinha.ca>
 S: Maintained
 F: include/hw/misc/unimp.h
 F: hw/misc/unimp.c
@@ -2199,6 +2218,7 @@ F: hw/misc/unimp.c
 Empty slot
 M: Artyom Tarasenko <atar4qemu@gmail.com>
 R: Philippe Mathieu-Daudé <f4bug@amsat.org>
+R: Ani Sinha <ani@anisinha.ca>
 S: Maintained
 F: include/hw/misc/empty_slot.h
 F: hw/misc/empty_slot.c
@@ -2400,7 +2420,9 @@ F: audio/alsaaudio.c
 
 Core Audio framework backend
 M: Gerd Hoffmann <kraxel@redhat.com>
+M: Philippe Mathieu-Daudé <f4bug@amsat.org>
 R: Christian Schoenebeck <qemu_oss@crudebyte.com>
+R: Akihiko Odaki <akihiko.odaki@gmail.com>
 S: Odd Fixes
 F: audio/coreaudio.c
 
@@ -2499,9 +2521,12 @@ F: block/stream.c
 F: block/mirror.c
 F: qapi/job.json
 F: block/block-copy.c
-F: include/block/block-copy.c
+F: include/block/block-copy.h
+F: block/reqlist.c
+F: include/block/reqlist.h
 F: block/copy-before-write.h
 F: block/copy-before-write.c
+F: block/snapshot-access.c
 F: include/block/aio_task.h
 F: block/aio_task.c
 F: util/qemu-co-shared-resource.c
@@ -2653,6 +2678,8 @@ F: util/drm.c
 
 Cocoa graphics
 M: Peter Maydell <peter.maydell@linaro.org>
+M: Philippe Mathieu-Daudé <f4bug@amsat.org>
+R: Akihiko Odaki <akihiko.odaki@gmail.com>
 S: Odd Fixes
 F: ui/cocoa.m
 
@@ -2730,13 +2757,13 @@ F: backends/cryptodev*.c
 Python library
 M: John Snow <jsnow@redhat.com>
 M: Cleber Rosa <crosa@redhat.com>
-R: Eduardo Habkost <eduardo@habkost.net>
+R: Beraldo Leal <bleal@redhat.com>
 S: Maintained
 F: python/
 T: git https://gitlab.com/jsnow/qemu.git python
 
 Python scripts
-M: Eduardo Habkost <eduardo@habkost.net>
+M: John Snow <jsnow@redhat.com>
 M: Cleber Rosa <crosa@redhat.com>
 S: Odd Fixes
 F: scripts/*.py
@@ -2973,10 +3000,11 @@ F: docs/sphinx/fakedbusdoc.py
 F: tests/qtest/dbus*
 
 Seccomp
-M: Eduardo Otubo <otubo@redhat.com>
-S: Supported
+M: Daniel P. Berrange <berrange@redhat.com>
+S: Odd Fixes
 F: softmmu/qemu-seccomp.c
 F: include/sysemu/seccomp.h
+F: tests/unit/test-seccomp.c
 
 Cryptography
 M: Daniel P. Berrange <berrange@redhat.com>
@@ -3117,6 +3145,19 @@ F: include/hw/i2c/smbus_master.h
 F: include/hw/i2c/smbus_slave.h
 F: include/hw/i2c/smbus_eeprom.h
 
+PMBus
+M: Titus Rwantare <titusr@google.com>
+S: Maintained
+F: hw/i2c/pmbus_device.c
+F: hw/sensor/adm1272.c
+F: hw/sensor/isl_pmbus_vr.c
+F: hw/sensor/max34451.c
+F: include/hw/i2c/pmbus_device.h
+F: include/hw/sensor/isl_pmbus_vr.h
+F: tests/qtest/adm1272-test.c
+F: tests/qtest/max34451-test.c
+F: tests/qtest/isl_pmbus_vr-test.c
+
 Firmware schema specifications
 M: Philippe Mathieu-Daudé <f4bug@amsat.org>
 R: Daniel P. Berrange <berrange@redhat.com>
@@ -3126,7 +3167,7 @@ F: docs/interop/firmware.json
 
 EDK2 Firmware
 M: Philippe Mathieu-Daudé <f4bug@amsat.org>
-R: Gerd Hoffmann <kraxel@redhat.com>
+M: Gerd Hoffmann <kraxel@redhat.com>
 S: Supported
 F: hw/i386/*ovmf*
 F: pc-bios/descriptors/??-edk2-*.json
@@ -3181,6 +3222,7 @@ R: Kyle Evans <kevans@freebsd.org>
 S: Maintained
 F: bsd-user/
 F: configs/targets/*-bsd-user.mak
+F: tests/vm/*bsd
 T: git https://github.com/qemu-bsd-user/qemu-bsd-user bsd-user-rebase-3.1
 
 Linux user
@@ -3530,6 +3572,7 @@ S: Maintained
 F: semihosting/
 F: include/semihosting/
 F: tests/tcg/multiarch/arm-compat-semi/
+F: tests/tcg/aarch64/system/semiheap.c
 
 Multi-process QEMU
 M: Elena Ufimtseva <elena.ufimtseva@oracle.com>
@@ -3579,6 +3622,7 @@ F: .travis.yml
 F: scripts/ci/
 F: tests/docker/
 F: tests/vm/
+F: tests/lcitool/
 F: scripts/archive-source.sh
 W: https://gitlab.com/qemu-project/qemu/pipelines
 W: https://travis-ci.org/qemu/qemu
@@ -3587,7 +3631,8 @@ FreeBSD Hosted Continuous Integration
 M: Ed Maste <emaste@freebsd.org>
 M: Li-Wen Hsu <lwhsu@freebsd.org>
 S: Maintained
-F: .cirrus.yml
+F: .gitlab-ci.d/cirrus/freebsd*
+F: tests/vm/freebsd
 W: https://cirrus-ci.com/github/qemu/qemu
 
 Windows Hosted Continuous Integration
