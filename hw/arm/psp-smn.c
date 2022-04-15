@@ -267,14 +267,12 @@ static void psp_smn_init(Object *obj)
     object_initialize_child(obj, "smn_flash", &s->psp_smn_flash,
                             TYPE_PSP_SMN_FLASH);
 
-    object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
-                             0xFFFFFFFF, &error_abort);
+    // TODO here or in realize?
+    //object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
+    //                         0xFFFFFFFF, &error_abort);
 
-    object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
-                            "SMN MEM", &error_abort);
-
-    object_property_set_bool(OBJECT(&s->psp_smn_misc), "realized", true,
-                             &error_abort);
+    //object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
+    //                        "SMN MEM", &error_abort);
 
 }
 
@@ -312,6 +310,20 @@ static void psp_smn_realize(DeviceState *dev, Error **errp) {
     SysBusDevice *sbd = SYS_BUS_DEVICE(dev);
     MemoryRegion *mr_smn_misc;
     PSPSmnFlashState* flash;
+    Error *err = NULL;
+
+    object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
+                             0xFFFFFFFF, &error_abort);
+
+    object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
+                            "SMN MEM", &error_abort);
+
+    sysbus_realize(SYS_BUS_DEVICE(&s->psp_smn_misc), &err);
+    sysbus_realize(SYS_BUS_DEVICE(&s->psp_smn_flash), &err);
+    if (err != NULL) {
+        error_propagate(errp, err);
+        return;
+    }
 
     /* The SMN address space. Independent from the PSP address space */
     memory_region_init(&s->psp_smn_space, OBJECT(dev), "smn-address-space",

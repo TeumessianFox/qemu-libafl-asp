@@ -92,7 +92,7 @@ static void amd_psp_init(Object *obj)
 
     object_initialize_child(obj, "smn", &s->smn, TYPE_PSP_SMN);
 
-    object_initialize_child(obj, "x86", &s->x86, TYPE_PSP_X86);
+    //object_initialize_child(obj, "x86", &s->x86, TYPE_PSP_X86);
 
     object_initialize_child(obj, "base_mem", &s->base_mem, TYPE_PSP_MISC);
 
@@ -102,7 +102,7 @@ static void amd_psp_init(Object *obj)
 
     object_initialize_child(obj, "psp-sts", &s->sts, TYPE_PSP_STS);
 
-    object_initialize_child(obj, "psp-ccp", &s->ccp, TYPE_CCP_V5);
+    //object_initialize_child(obj, "psp-ccp", &s->ccp, TYPE_CCP_V5);
 }
 
 static void amd_psp_realize(DeviceState *dev, Error **errp)
@@ -114,10 +114,10 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     uint32_t sram_addr;
 
     /* Enable the ARM TrustZone extensions */
-    object_property_set_bool(OBJECT(&s->cpu), "has_el3", true,  &err);
+    //object_property_set_bool(OBJECT(&s->cpu), "has_el3", true,  &err);
 
     /* Init CPU object. TODO convert to qdev_init_nofail */
-    object_property_set_bool(OBJECT(&s->cpu), "realized", true, &err);
+    qdev_realize(DEVICE(&s->cpu), NULL, &err);
     if (err != NULL) {
         error_propagate(errp, err);
         return;
@@ -125,13 +125,11 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
 
     object_property_set_uint(OBJECT(&s->smn), "smn-container-base",
                              PSP_SMN_BASE, &error_abort);
+    sysbus_realize(SYS_BUS_DEVICE(&s->smn), &err);
 
-    object_property_set_bool(OBJECT(&s->smn), "realized", true, &error_abort);
-
-    object_property_set_uint(OBJECT(&s->x86), "x86-container-base",
-                             PSP_X86_BASE, &error_abort);
-
-    object_property_set_bool(OBJECT(&s->x86), "realized", true, &error_abort);
+    //object_property_set_uint(OBJECT(&s->x86), "x86-container-base",
+    //                        PSP_X86_BASE, &error_abort);
+    //sysbus_realize(SYS_BUS_DEVICE(&s->x86), &err);
 
     object_property_set_uint(OBJECT(&s->base_mem), "psp_misc_msize",
                              (1UL << 32), &err);
@@ -147,7 +145,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
         return;
     }
 
-    object_property_set_bool(OBJECT(&s->base_mem), "realized", true, &err);
+    sysbus_realize(SYS_BUS_DEVICE(&s->base_mem), &err);
     if (err != NULL) {
         error_propagate(errp, err);
         return;
@@ -166,26 +164,34 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     memory_region_add_subregion(get_system_memory(), PSP_ROM_BASE, &s->rom);
 
     /* Map SMN control registers */
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->smn), 0, PSP_SMN_CTRL_BASE);
+    //sysbus_realize(SYS_BUS_DEVICE(&s->smn), &err);
+    //if (err != NULL) {
+    //    error_propagate(errp, err);
+    //    return;
+    //}
+    //sysbus_mmio_map(SYS_BUS_DEVICE(&s->smn), 0, PSP_SMN_CTRL_BASE);
 
     /* Map X86 control registers */
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 0, PSP_X86_CTRL1_BASE);
+    //sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 0, PSP_X86_CTRL1_BASE);
 
     /* Map X86 control registers */
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 1, PSP_X86_CTRL2_BASE);
+    //sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 1, PSP_X86_CTRL2_BASE);
 
     /* Map X86 control registers */
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 2, PSP_X86_CTRL3_BASE);
+    //sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 2, PSP_X86_CTRL3_BASE);
 
     /* Map timers */
+    sysbus_realize(SYS_BUS_DEVICE(&s->timer1), &err);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->timer1), 0, PSP_TIMER1_BASE);
+    sysbus_realize(SYS_BUS_DEVICE(&s->timer2), &err);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->timer2), 0, PSP_TIMER2_BASE);
 
     /* Map PSP Status port */
+    sysbus_realize(SYS_BUS_DEVICE(&s->sts), &error_abort);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->sts), 0, PSP_STS_ZEN1_BASE);
 
     /* Map CCP */
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccp), 0, PSP_CCP_BASE);
+    //sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccp), 0, PSP_CCP_BASE);
 
     /* TODO: Is this the way to go? ... */
     s->base_mem.regs = psp_regs;

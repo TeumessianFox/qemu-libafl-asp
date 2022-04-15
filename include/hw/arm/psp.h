@@ -91,19 +91,19 @@ typedef struct AmdPspState {
   PSPSmnState smn;
 
   /* This device represents the x86 address space */
-  PSPX86State x86;
+  //PSPX86State x86;
 
   /* PSP Timer 1 at 0x03010400*/
   PSPTimerState timer1;
-  
+
   /* PSP Timer 2 at 0x03010424*/
   PSPTimerState timer2;
-  
+
   /* PSP Status port */
   PSPStsState sts;
 
   /* CCP */
-  CcpV5State ccp;
+  //CcpV5State ccp;
 
 } AmdPspState;
 
