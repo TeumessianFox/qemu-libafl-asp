@@ -56,7 +56,7 @@ static void zen_init(MachineState *machine) {
 
     smn_bios_name = machine->firmware;
 
-    /* TODO rework: Use generic_loader: docs/generic-loader.txt */
+    /* TODO rework: Use generic_loader: docs/system/generic-loader.txt */
     /* psp_load_firmware(psp,PSP_ROM_BASE); */
     /* Set PC to high-vec */
     psp->cpu.env.regs[15] = 0xffff0000;
@@ -70,7 +70,9 @@ static void psp_zen_machine_init(MachineClass *mc) {
     mc->max_cpus = 1;
     mc->default_cpus = 1;
     mc->default_cpu_type = ARM_CPU_TYPE_NAME("cortex-a9");
-    /* The PSP does not have ram, however the generic-loader device apparently
+    /* 
+     * hw/core/generic_loader.c     line 157
+     * The PSP does not have ram, however the generic-loader device apparently
      * validates this value, so we set it here to an sufficiently large value
      * TODO: Verify that this has not other, unwanted side-effects.
      */

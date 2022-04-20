@@ -215,7 +215,7 @@ static void amd_psp_class_init(ObjectClass *oc, void* data)
     /* TODO: Add generation to the description */
     dc->desc = "AMD PSP";
     dc->realize = amd_psp_realize;
-    /* TODO: Why? */
+    /* Disabling device instantiation with arbitrary machines */
     dc->user_creatable = false;
 }
 
