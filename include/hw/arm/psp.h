@@ -103,7 +103,7 @@ typedef struct AmdPspState {
   PSPStsState sts;
 
   /* CCP */
-  //CcpV5State ccp;
+  CcpV5State ccp;
 
 } AmdPspState;
 

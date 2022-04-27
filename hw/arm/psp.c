@@ -102,7 +102,7 @@ static void amd_psp_init(Object *obj)
 
     object_initialize_child(obj, "psp-sts", &s->sts, TYPE_PSP_STS);
 
-    //object_initialize_child(obj, "psp-ccp", &s->ccp, TYPE_CCP_V5);
+    object_initialize_child(obj, "psp-ccp", &s->ccp, TYPE_CCP_V5);
 }
 
 static void amd_psp_realize(DeviceState *dev, Error **errp)
@@ -164,12 +164,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     memory_region_add_subregion(get_system_memory(), PSP_ROM_BASE, &s->rom);
 
     /* Map SMN control registers */
-    //sysbus_realize(SYS_BUS_DEVICE(&s->smn), &err);
-    //if (err != NULL) {
-    //    error_propagate(errp, err);
-    //    return;
-    //}
-    //sysbus_mmio_map(SYS_BUS_DEVICE(&s->smn), 0, PSP_SMN_CTRL_BASE);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->smn), 0, PSP_SMN_CTRL_BASE);
 
     /* Map X86 control registers */
     //sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 0, PSP_X86_CTRL1_BASE);
@@ -191,7 +186,8 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->sts), 0, PSP_STS_ZEN1_BASE);
 
     /* Map CCP */
-    //sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccp), 0, PSP_CCP_BASE);
+    sysbus_realize(SYS_BUS_DEVICE(&s->ccp), &error_abort);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccp), 0, PSP_CCP_BASE);
 
     /* TODO: Is this the way to go? ... */
     s->base_mem.regs = psp_regs;
