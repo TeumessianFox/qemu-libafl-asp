@@ -55,7 +55,7 @@ static void psp_sts_write(void *opaque, hwaddr offset,
     }
 
     s->psp_sts_val = value;
-    qemu_log_mask(LOG_UNIMP, "PSP STS: 0x%x\n", s->psp_sts_val);
+    qemu_log_mask(LOG_TRACE, "PSP STS: 0x%x\n", s->psp_sts_val);
 
 }
 
