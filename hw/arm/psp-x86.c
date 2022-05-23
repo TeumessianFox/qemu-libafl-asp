@@ -43,6 +43,7 @@ static PSPMiscReg psp_regs[] = {
 
 };
 /* TODO: Refactor read/write methods */
+/* TODO: fix log -> use log trace for non errors */
 
 static uint32_t psp_x86_ctrl_read(PSPX86State *s, uint32_t slot_id,
                                   PSPX86RegId reg_id) {
