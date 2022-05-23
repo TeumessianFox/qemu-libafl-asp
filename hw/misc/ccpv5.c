@@ -30,6 +30,7 @@
 #include "hw/qdev-properties.h"
 #include "hw/boards.h"
 #include "hw/loader.h"
+#include "qemu/log-for-trace.h"
 #include "qemu/log.h"
 #include "hw/misc/ccpv5.h"
 #include "hw/misc/ccpv5-linux.h"
@@ -110,22 +111,22 @@ static uint32_t ccp_queue_read(CcpV5State *s, hwaddr offset, uint32_t id) {
     switch(offset) {
         case CCP_Q_CTRL_OFFSET:
             ret = qs->ccp_q_control;
-            qemu_log_mask(LOG_UNIMP,
+            qemu_log_mask(LOG_TRACE,
                           "CCP: queue %d ctrl read (val = 0x%x)\n", id, ret);
             break;
         case CCP_Q_TAIL_LO_OFFSET:
             ret = qs->ccp_q_tail;
-            qemu_log_mask(LOG_UNIMP,
+            qemu_log_mask(LOG_TRACE,
                           "CCP: queue %d tail read (val = 0x%x)\n", id, ret);
             break;
         case CCP_Q_HEAD_LO_OFFSET:
             ret = qs->ccp_q_head;
-            qemu_log_mask(LOG_UNIMP,
+            qemu_log_mask(LOG_TRACE,
                           "CCP: queue %d head read (val = 0x%x)\n", id, ret);
             break;
         case CCP_Q_STATUS_OFFSET:
             ret = qs->ccp_q_status;
-            qemu_log_mask(LOG_UNIMP,
+            qemu_log_mask(LOG_TRACE,
                           "CCP: queue %d status read (val = 0x%x)\n", id, ret);
             break;
         default:
@@ -208,13 +209,13 @@ static void ccp_in_guest_pt(CcpV5State *s, uint32_t id, hwaddr dst, hwaddr src,
         sclean = true;
     }
 
-    qemu_log_mask(LOG_UNIMP, "CCP: Performing passthrough. Copying 0x%x " \
+    qemu_log_mask(LOG_TRACE, "CCP: Performing passthrough. Copying 0x%x " \
                   "bytes from 0x%" HWADDR_PRIx " to 0x%" HWADDR_PRIx "\n",
                   len, src, dst);
 
     /* "plen" might have been shortened to the range of memory actually available */
     if (plen < len) {
-        qemu_log_mask(LOG_UNIMP, "CCP: Only copying 0x%x bytes!\n", (uint32_t) plen);
+        qemu_log_mask(LOG_TRACE, "CCP: Only copying 0x%x bytes!\n", (uint32_t) plen);
     }
     ccp_memcpy(hdst, hsrc, plen, bwise, bswap);
 
@@ -255,7 +256,7 @@ static void ccp_perform_sha_256(CcpV5State *s, hwaddr src, uint32_t len, bool eo
     void* hsrc;
     hwaddr plen;
     plen = len;
-    qemu_log_mask(LOG_UNIMP, "CCP SHA256: in perf: len = 0x%x\n",len);
+    qemu_log_mask(LOG_TRACE, "CCP SHA256: in perf: len = 0x%x\n",len);
 
     if (s->sha_ctx.raw == NULL) {
         /* Init new SHA256 context */
@@ -317,7 +318,7 @@ static bool ccp_zlib(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
     init = CCP5_CMD_INIT(desc);
     eom = CCP5_CMD_EOM(desc);
 
-    qemu_log_mask(LOG_UNIMP, "CCP ZLIB: src 0x%" HWADDR_PRIx " len" \
+    qemu_log_mask(LOG_TRACE, "CCP ZLIB: src 0x%" HWADDR_PRIx " len" \
                   " 0x%x dst 0x%" HWADDR_PRIx " src_type 0x%x dst_type 0x%x" \
                   " init %d eom %d\n", src, len, dst, src_type, dst_type, 
                   init, eom);
@@ -379,12 +380,12 @@ static void ccp_sha(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
     src = CCP5_CMD_SRC_LO(desc) | ((hwaddr)(CCP5_CMD_SRC_HI(desc)) << 32);
     sha_len = CCP5_CMD_SHA_LO(desc) | ((uint64_t)(CCP5_CMD_SHA_HI(desc)) << 32);
     ctx_id = CCP5_CMD_LSB_ID(desc);
-    
+
     ctx = s->lsb.u.slots[ctx_id].data;
 
     switch (func.sha.type) {
         case CCP_SHA_TYPE_256:
-            qemu_log_mask(LOG_UNIMP, "CCP SHA256: src 0x%" HWADDR_PRIx " len" \
+            qemu_log_mask(LOG_TRACE, "CCP SHA256: src 0x%" HWADDR_PRIx " len" \
                           " 0x%x sha_len 0x%lx init 0x%d eom 0x%d ctx_id %d\n",
                           src, len, sha_len, init, eom, ctx_id);
             ccp_perform_sha_256(s, src, len, eom, init, ctx);
@@ -493,7 +494,7 @@ static void ccp_rsa(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
     rsa_dst = CCP5_CMD_DST_LO(desc) | ((hwaddr)(CCP5_CMD_DST_HI(desc)) << 32);
 
 
-    qemu_log_mask(LOG_UNIMP, "CCP RSA: src 0x%x len 0x%x dst" \
+    qemu_log_mask(LOG_TRACE, "CCP RSA: src 0x%x len 0x%x dst" \
                   " 0x%lx dst_type 0x%d rsa_mode 0x%x rsa_size 0x%x eom 0x%d init %d\n",
                   desc->src_lo, len, rsa_dst, rsa_dst_mtype, rsa_mode, rsa_size, eom, init);
     if (rsa_mode == 0 && ( rsa_size == 256 && len == 512)) {
@@ -576,7 +577,7 @@ static void ccp_process_q(CcpV5State *s, uint32_t id) {
     /* TODO: This operation needs to be delayed! */
 
     qs = &s->q_states[id];
-    qemu_log_mask(LOG_UNIMP,
+    qemu_log_mask(LOG_TRACE,
                   "CCP: queue %d start cmd tail 0x%x head 0x%x\n",
                   qs->ccp_q_id, qs->ccp_q_tail, qs->ccp_q_head);
 
@@ -624,22 +625,22 @@ static void ccp_queue_write(CcpV5State *s, hwaddr offset, uint32_t val,
                     qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: Can't program timer. A CCP request is already pending.\n");
                 }
             }
-            qemu_log_mask(LOG_UNIMP,
+            qemu_log_mask(LOG_TRACE,
                           "CCP: queue %d ctrl write (val = 0x%x)\n", id, val);
             break;
         case CCP_Q_TAIL_LO_OFFSET:
             qs->ccp_q_tail = val;
-            qemu_log_mask(LOG_UNIMP,
+            qemu_log_mask(LOG_TRACE,
                           "CCP: queue %d tail write (val = 0x%x)\n", id, val);
             break;
         case CCP_Q_HEAD_LO_OFFSET:
             qs->ccp_q_head = val;
-            qemu_log_mask(LOG_UNIMP,
+            qemu_log_mask(LOG_TRACE,
                           "CCP: queue %d head write (val = 0x%x)\n", id, val);
             break;
         case CCP_Q_STATUS_OFFSET:
             qs->ccp_q_status = val;
-            qemu_log_mask(LOG_UNIMP,
+            qemu_log_mask(LOG_TRACE,
                           "CCP: queue %d status write (val = 0x%x)\n", id, val);
             break;
         default:
@@ -661,7 +662,7 @@ static uint32_t ccp_ctrl_read(CcpV5State *s, hwaddr offset) {
             /* Ignored for now */
             break;
         default:
-            qemu_log_mask(LOG_UNIMP, "CCP: Global ctrl write at offset " \
+            qemu_log_mask(LOG_TRACE, "CCP: Global ctrl write at offset " \
                                      "0x%" HWADDR_PRIx "\n", offset);
             break;
     }
@@ -681,7 +682,7 @@ static void ccp_ctrl_write(CcpV5State *s, hwaddr offset,
             /* Ignored for now */
             break;
         default:
-            qemu_log_mask(LOG_UNIMP, "CCP: Global ctrl write at offset " \
+            qemu_log_mask(LOG_TRACE, "CCP: Global ctrl write at offset " \
                                      "0x%" HWADDR_PRIx " , value 0x%x\n", offset,
                                      value);
             break;
@@ -693,7 +694,7 @@ static void ccp_ctrl_write(CcpV5State *s, hwaddr offset,
 static uint32_t ccp_config_read(CcpV5State *s, hwaddr offset) {
     (void)s;
 
-    qemu_log_mask(LOG_UNIMP, "CCP: CCP config read at offset " \
+    qemu_log_mask(LOG_TRACE, "CCP: CCP config read at offset " \
                              "0x%" HWADDR_PRIx "\n", offset);
 
     switch (offset) {
@@ -710,7 +711,7 @@ static uint32_t ccp_config_read(CcpV5State *s, hwaddr offset) {
 static void ccp_config_write(CcpV5State *s, hwaddr offset,
                                     uint32_t value) {
     (void)s;
-    qemu_log_mask(LOG_UNIMP, "CCP: CCP config write at offset " \
+    qemu_log_mask(LOG_TRACE, "CCP: CCP config write at offset " \
                              "0x%" HWADDR_PRIx " , value 0x%x\n", offset,
                              value);
 
@@ -753,7 +754,6 @@ static void ccp_write(void *opaque, hwaddr offset,
                        uint64_t value, unsigned int size) {
     CcpV5State *s = CCP_V5(opaque);
     uint32_t id = 0;
-    
 
     if (size != sizeof(uint32_t)) {
         qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: Unsupported write size:" \
@@ -830,4 +830,5 @@ static void ccp_register_types(void) {
     type_register_static(&ccp_info);
 
 }
+
 type_init(ccp_register_types);
