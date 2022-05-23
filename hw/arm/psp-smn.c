@@ -30,6 +30,7 @@
 #include "hw/loader.h"
 #include "hw/arm/psp.h"
 #include "qemu/log.h"
+#include "qemu/log-for-trace.h"
 #include "hw/arm/psp-smn.h"
 
 /* DEFINE_PROP_STRING("rom_path", AmdPspState,flash_rom_path), */
@@ -187,8 +188,7 @@ static void psp_smn_update_slot(PSPSmnState *smn, uint32_t idx) {
     /* TODO documentation */
     memory_region_set_alias_offset(&smn->psp_smn_containers[idx], addr);
 
-    /* TODO fix log entries */
-    qemu_log_mask(LOG_UNIMP, "%s: SMN mapped 0x%x to SMN slot %d\n",ident, addr,
+    qemu_log_mask(LOG_TRACE, "%s: SMN mapped 0x%x to SMN slot %d\n",ident, addr,
                   idx);
 
 }
@@ -199,7 +199,7 @@ static void psp_smn_write(void *opaque, hwaddr offset, uint64_t value,
     uint32_t idx;
     hwaddr phys_base = smn->psp_smn_control.addr;
 
-    qemu_log_mask(LOG_UNIMP, "%s: SMN write at 0x%" HWADDR_PRIx
+    qemu_log_mask(LOG_TRACE, "%s: SMN write at 0x%" HWADDR_PRIx
         " (size %d, raw val 0x%lx)\n",
         ident, phys_base + offset, size, value);
     switch (size) {
@@ -247,7 +247,7 @@ static uint64_t psp_smn_read(void *opaque, hwaddr offset, unsigned int size) {
             break;
 
     }
-    qemu_log_mask(LOG_UNIMP, "%s: SMN read at 0x%" HWADDR_PRIx
+    qemu_log_mask(LOG_TRACE, "%s: SMN read at 0x%" HWADDR_PRIx
         " (size %d, raw val 0x%x)\n",
         ident, phys_base + offset, size, val);
     return val;
