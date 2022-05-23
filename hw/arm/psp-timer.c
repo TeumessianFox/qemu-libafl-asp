@@ -32,6 +32,8 @@
 #include "qemu/log.h"
 #include "hw/arm/psp-timer.h"
 
+static char ident[] = "PSP Timer";
+
 static uint64_t psp_timer_read(void *opaque, hwaddr offset, unsigned int size) {
     PSPTimerState *s = PSP_TIMER(opaque);
     uint64_t val;
@@ -39,8 +41,8 @@ static uint64_t psp_timer_read(void *opaque, hwaddr offset, unsigned int size) {
 
     if (size != sizeof(uint32_t)) {
         qemu_log_mask(LOG_UNIMP,
-                      "PSP Timer: Error. Unsupported read size at offset 0x%" \
-                      HWADDR_PRIx "\n", phys_base + offset);
+                      "%s: Error. Unsupported read size at offset 0x%" \
+                      HWADDR_PRIx "\n", ident, phys_base + offset);
         return 0;
     }
 
@@ -57,9 +59,9 @@ static uint64_t psp_timer_read(void *opaque, hwaddr offset, unsigned int size) {
             val = 0;
             break;
     }
-    qemu_log_mask(LOG_UNIMP,
-                  "PSP Timer: Read at 0x%" HWADDR_PRIx " .Returning 0x%lx\n",
-                  phys_base + offset, val);
+    qemu_log_mask(LOG_TRACE,
+                  "%s: Read at 0x%" HWADDR_PRIx ". Returning 0x%lx\n",
+                  ident, phys_base + offset, val);
 
     return val;
 }
