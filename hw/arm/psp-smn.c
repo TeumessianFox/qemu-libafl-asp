@@ -40,6 +40,16 @@ const char* ident = "SMN Control";
 
 static PSPMiscReg psp_regs[] = {
     {
+        /* Read by the on chip bootloader and acted upon. */
+        .addr = 0x5b304,
+        .val = 0xffffffff,
+    },
+    {
+        /* Read by the on chip bootloader and acted upon. TODO verify */
+        .addr = 0x5bb04,
+        .val = 0xffffffff,
+    },
+    {
         /* The on chip bootloader waits for bit 0 to go 1 */
         .addr = 0x5e000,
         .val = 0x1,
@@ -268,11 +278,11 @@ static void psp_smn_init(Object *obj)
                             TYPE_PSP_SMN_FLASH);
 
     // TODO here or in realize?
-    //object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
-    //                         0xFFFFFFFF, &error_abort);
+    object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
+                             0xFFFFFFFF, &error_abort);
 
-    //object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
-    //                        "SMN MEM", &error_abort);
+    object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
+                            "SMN MEM", &error_abort);
 
 }
 
