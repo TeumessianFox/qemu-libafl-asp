@@ -237,7 +237,6 @@
 #                   information (since 1.7)
 #
 # Since: 1.3
-#
 ##
 { 'struct': 'ImageInfo',
   'data': {'filename': 'str', 'format': 'str', '*dirty-flag': 'bool',
@@ -288,7 +287,6 @@
 #                       supports it
 #
 # Since: 1.4
-#
 ##
 { 'struct': 'ImageCheck',
   'data': {'filename': 'str', 'format': 'str', 'check-errors': 'int',
@@ -328,7 +326,6 @@
 # @filename: filename that is referred to by @offset
 #
 # Since: 2.6
-#
 ##
 { 'struct': 'MapEntry',
   'data': {'start': 'int', 'length': 'int', 'data': 'bool',
@@ -340,9 +337,9 @@
 #
 # Cache mode information for a block device
 #
-# @writeback:   true if writeback mode is enabled
-# @direct:      true if the host page cache is bypassed (O_DIRECT)
-# @no-flush:    true if flush requests are ignored for the device
+# @writeback: true if writeback mode is enabled
+# @direct: true if the host page cache is bypassed (O_DIRECT)
+# @no-flush: true if flush requests are ignored for the device
 #
 # Since: 2.3
 ##
@@ -445,7 +442,6 @@
 #                 has one or more dirty bitmaps) (Since 4.2)
 #
 # Since: 0.14
-#
 ##
 { 'struct': 'BlockDeviceInfo',
   'data': { 'file': 'str', '*node-name': 'str', 'ro': 'bool', 'drv': 'str',
@@ -608,7 +604,7 @@
 # @inserted: @BlockDeviceInfo describing the device if media is
 #            present
 #
-# Since:  0.14
+# Since: 0.14
 ##
 { 'struct': 'BlockInfo',
   'data': {'device': 'str', '*qdev': 'str', 'type': 'str', 'removable': 'bool',
@@ -741,8 +737,8 @@
 #    }
 #
 ##
-{ 'command': 'query-block', 'returns': ['BlockInfo'] }
-
+{ 'command': 'query-block', 'returns': ['BlockInfo'],
+  'allow-preconfig': true }
 
 ##
 # @BlockDeviceTimedStats:
@@ -800,9 +796,9 @@
 #
 # Statistics of a virtual block device or a block backing device.
 #
-# @rd_bytes:      The number of bytes read by the device.
+# @rd_bytes: The number of bytes read by the device.
 #
-# @wr_bytes:      The number of bytes written by the device.
+# @wr_bytes: The number of bytes written by the device.
 #
 # @unmap_bytes: The number of bytes unmapped by the device (Since 4.2)
 #
@@ -975,7 +971,7 @@
 # @qdev: The qdev ID, or if no ID is assigned, the QOM path of the block
 #        device. (since 3.0)
 #
-# @stats:  A @BlockDeviceStats for the device.
+# @stats: A @BlockDeviceStats for the device.
 #
 # @driver-specific: Optional driver-specific stats. (Since 4.2)
 #
@@ -1118,7 +1114,8 @@
 ##
 { 'command': 'query-blockstats',
   'data': { '*query-nodes': 'bool' },
-  'returns': ['BlockStats'] }
+  'returns': ['BlockStats'],
+  'allow-preconfig': true }
 
 ##
 # @BlockdevOnError:
@@ -1267,7 +1264,8 @@
 #
 # Since: 1.1
 ##
-{ 'command': 'query-block-jobs', 'returns': ['BlockJobInfo'] }
+{ 'command': 'query-block-jobs', 'returns': ['BlockJobInfo'],
+  'allow-preconfig': true }
 
 ##
 # @block_resize:
@@ -1280,7 +1278,7 @@
 #
 # @node-name: graph node name to get the image resized (Since 2.0)
 #
-# @size:  new image size in bytes
+# @size: new image size in bytes
 #
 # Returns: - nothing on success
 #          - If @device is not a valid block device, DeviceNotFound
@@ -1298,7 +1296,8 @@
   'data': { '*device': 'str',
             '*node-name': 'str',
             'size': 'int' },
-  'coroutine': true }
+  'coroutine': true,
+  'allow-preconfig': true }
 
 ##
 # @NewImageMode:
@@ -1514,8 +1513,8 @@
 #
 ##
 { 'command': 'blockdev-snapshot-sync',
-  'data': 'BlockdevSnapshotSync' }
-
+  'data': 'BlockdevSnapshotSync',
+  'allow-preconfig': true }
 
 ##
 # @blockdev-snapshot:
@@ -1556,7 +1555,8 @@
 ##
 { 'command': 'blockdev-snapshot',
   'data': 'BlockdevSnapshot',
-  'features': [ 'allow-write-only-overlay' ] }
+  'features': [ 'allow-write-only-overlay' ],
+  'allow-preconfig': true }
 
 ##
 # @change-backing-file:
@@ -1588,7 +1588,8 @@
 ##
 { 'command': 'change-backing-file',
   'data': { 'device': 'str', 'image-node-name': 'str',
-            'backing-file': 'str' } }
+            'backing-file': 'str' },
+  'allow-preconfig': true }
 
 ##
 # @block-commit:
@@ -1698,7 +1699,8 @@
             '*backing-file': 'str', '*speed': 'int',
             '*on-error': 'BlockdevOnError',
             '*filter-node-name': 'str',
-            '*auto-finalize': 'bool', '*auto-dismiss': 'bool' } }
+            '*auto-finalize': 'bool', '*auto-dismiss': 'bool' },
+  'allow-preconfig': true }
 
 ##
 # @drive-backup:
@@ -1727,7 +1729,8 @@
 #
 ##
 { 'command': 'drive-backup', 'boxed': true,
-  'data': 'DriveBackup', 'features': ['deprecated'] }
+  'data': 'DriveBackup', 'features': ['deprecated'],
+  'allow-preconfig': true }
 
 ##
 # @blockdev-backup:
@@ -1744,6 +1747,7 @@
 # Since: 2.3
 #
 # Example:
+#
 # -> { "execute": "blockdev-backup",
 #      "arguments": { "device": "src-id",
 #                     "sync": "full",
@@ -1752,8 +1756,8 @@
 #
 ##
 { 'command': 'blockdev-backup', 'boxed': true,
-  'data': 'BlockdevBackup' }
-
+  'data': 'BlockdevBackup',
+  'allow-preconfig': true }
 
 ##
 # @query-named-block-nodes:
@@ -1776,6 +1780,7 @@
 #                    "file":"disks/test.qcow2",
 #                    "node-name": "my-node",
 #                    "backing_file_depth":1,
+#                    "detect_zeroes":"off",
 #                    "bps":1000000,
 #                    "bps_rd":0,
 #                    "bps_wr":0,
@@ -1818,7 +1823,8 @@
 ##
 { 'command': 'query-named-block-nodes',
   'returns': [ 'BlockDeviceInfo' ],
-  'data': { '*flat': 'bool' } }
+  'data': { '*flat': 'bool' },
+  'allow-preconfig': true }
 
 ##
 # @XDbgBlockGraphNodeType:
@@ -1927,7 +1933,8 @@
 # Since: 4.0
 ##
 { 'command': 'x-debug-query-block-graph', 'returns': 'XDbgBlockGraph',
-  'features': [ 'unstable' ] }
+  'features': [ 'unstable' ],
+  'allow-preconfig': true }
 
 ##
 # @drive-mirror:
@@ -1955,7 +1962,8 @@
 #
 ##
 { 'command': 'drive-mirror', 'boxed': true,
-  'data': 'DriveMirror' }
+  'data': 'DriveMirror',
+  'allow-preconfig': true }
 
 ##
 # @DriveMirror:
@@ -1965,8 +1973,8 @@
 # @job-id: identifier for the newly-created block job. If
 #          omitted, the device name will be used. (Since 2.7)
 #
-# @device:  the device name or node-name of a root node whose writes should be
-#           mirrored.
+# @device: the device name or node-name of a root node whose writes should be
+#          mirrored.
 #
 # @target: the target of the new image. If the file exists, or if it
 #          is a device, the existing file/device will be used as the new
@@ -1986,7 +1994,7 @@
 # @mode: whether and how QEMU should create a new image, default is
 #        'absolute-paths'.
 #
-# @speed:  the maximum speed, in bytes per second
+# @speed: the maximum speed, in bytes per second
 #
 # @sync: what parts of the disk image should be copied to the destination
 #        (all the disk, only the sectors allocated in the topmost image, or
@@ -2007,6 +2015,7 @@
 # @on-target-error: the action to take on an error on the target,
 #                   default 'report' (no limitations, since this applies to
 #                   a different block device than @device).
+#
 # @unmap: Whether to try to unmap target sectors where source has
 #         only zero. If true, and target unallocated sectors will read as zero,
 #         target image sectors will be unmapped; otherwise, zeroes will be
@@ -2028,6 +2037,7 @@
 #                When true, this job will automatically disappear from the query
 #                list without user intervention.
 #                Defaults to true. (Since 3.1)
+#
 # Since: 1.3
 ##
 { 'struct': 'DriveMirror',
@@ -2078,7 +2088,7 @@
             '*persistent': 'bool', '*disabled': 'bool' } }
 
 ##
-# @BlockDirtyBitmapMergeSource:
+# @BlockDirtyBitmapOrStr:
 #
 # @local: name of the bitmap, attached to the same node as target bitmap.
 #
@@ -2086,7 +2096,7 @@
 #
 # Since: 4.1
 ##
-{ 'alternate': 'BlockDirtyBitmapMergeSource',
+{ 'alternate': 'BlockDirtyBitmapOrStr',
   'data': { 'local': 'str',
             'external': 'BlockDirtyBitmap' } }
 
@@ -2105,7 +2115,7 @@
 ##
 { 'struct': 'BlockDirtyBitmapMerge',
   'data': { 'node': 'str', 'target': 'str',
-            'bitmaps': ['BlockDirtyBitmapMergeSource'] } }
+            'bitmaps': ['BlockDirtyBitmapOrStr'] } }
 
 ##
 # @block-dirty-bitmap-add:
@@ -2126,7 +2136,8 @@
 #
 ##
 { 'command': 'block-dirty-bitmap-add',
-  'data': 'BlockDirtyBitmapAdd' }
+  'data': 'BlockDirtyBitmapAdd',
+  'allow-preconfig': true }
 
 ##
 # @block-dirty-bitmap-remove:
@@ -2150,7 +2161,8 @@
 #
 ##
 { 'command': 'block-dirty-bitmap-remove',
-  'data': 'BlockDirtyBitmap' }
+  'data': 'BlockDirtyBitmap',
+  'allow-preconfig': true }
 
 ##
 # @block-dirty-bitmap-clear:
@@ -2173,7 +2185,8 @@
 #
 ##
 { 'command': 'block-dirty-bitmap-clear',
-  'data': 'BlockDirtyBitmap' }
+  'data': 'BlockDirtyBitmap',
+  'allow-preconfig': true }
 
 ##
 # @block-dirty-bitmap-enable:
@@ -2194,7 +2207,8 @@
 #
 ##
 { 'command': 'block-dirty-bitmap-enable',
-  'data': 'BlockDirtyBitmap' }
+  'data': 'BlockDirtyBitmap',
+  'allow-preconfig': true }
 
 ##
 # @block-dirty-bitmap-disable:
@@ -2215,7 +2229,8 @@
 #
 ##
 { 'command': 'block-dirty-bitmap-disable',
-  'data': 'BlockDirtyBitmap' }
+  'data': 'BlockDirtyBitmap',
+  'allow-preconfig': true }
 
 ##
 # @block-dirty-bitmap-merge:
@@ -2247,7 +2262,8 @@
 #
 ##
 { 'command': 'block-dirty-bitmap-merge',
-  'data': 'BlockDirtyBitmapMerge' }
+  'data': 'BlockDirtyBitmapMerge',
+  'allow-preconfig': true }
 
 ##
 # @BlockDirtyBitmapSha256:
@@ -2278,7 +2294,8 @@
 ##
 { 'command': 'x-debug-block-dirty-bitmap-sha256',
   'data': 'BlockDirtyBitmap', 'returns': 'BlockDirtyBitmapSha256',
-  'features': [ 'unstable' ] }
+  'features': [ 'unstable' ],
+  'allow-preconfig': true }
 
 ##
 # @blockdev-mirror:
@@ -2299,7 +2316,7 @@
 #            broken Quorum files.  By default, @device is replaced, although
 #            implicitly created filters on it are kept.
 #
-# @speed:  the maximum speed, in bytes per second
+# @speed: the maximum speed, in bytes per second
 #
 # @sync: what parts of the disk image should be copied to the destination
 #        (all the disk, only the sectors allocated in the topmost image, or
@@ -2341,6 +2358,7 @@
 #                When true, this job will automatically disappear from the query
 #                list without user intervention.
 #                Defaults to true. (Since 3.1)
+#
 # Returns: nothing on success.
 #
 # Since: 2.6
@@ -2363,7 +2381,8 @@
             '*on-target-error': 'BlockdevOnError',
             '*filter-node-name': 'str',
             '*copy-mode': 'MirrorCopyMode',
-            '*auto-finalize': 'bool', '*auto-dismiss': 'bool' } }
+            '*auto-finalize': 'bool', '*auto-dismiss': 'bool' },
+  'allow-preconfig': true }
 
 ##
 # @BlockIOThrottle:
@@ -2665,7 +2684,8 @@
             '*base-node': 'str', '*backing-file': 'str', '*bottom': 'str',
             '*speed': 'int', '*on-error': 'BlockdevOnError',
             '*filter-node-name': 'str',
-            '*auto-finalize': 'bool', '*auto-dismiss': 'bool' } }
+            '*auto-finalize': 'bool', '*auto-dismiss': 'bool' },
+  'allow-preconfig': true }
 
 ##
 # @block-job-set-speed:
@@ -2689,7 +2709,8 @@
 # Since: 1.1
 ##
 { 'command': 'block-job-set-speed',
-  'data': { 'device': 'str', 'speed': 'int' } }
+  'data': { 'device': 'str', 'speed': 'int' },
+  'allow-preconfig': true }
 
 ##
 # @block-job-cancel:
@@ -2728,7 +2749,8 @@
 #
 # Since: 1.1
 ##
-{ 'command': 'block-job-cancel', 'data': { 'device': 'str', '*force': 'bool' } }
+{ 'command': 'block-job-cancel', 'data': { 'device': 'str', '*force': 'bool' },
+  'allow-preconfig': true }
 
 ##
 # @block-job-pause:
@@ -2752,7 +2774,8 @@
 #
 # Since: 1.3
 ##
-{ 'command': 'block-job-pause', 'data': { 'device': 'str' } }
+{ 'command': 'block-job-pause', 'data': { 'device': 'str' },
+  'allow-preconfig': true }
 
 ##
 # @block-job-resume:
@@ -2774,7 +2797,8 @@
 #
 # Since: 1.3
 ##
-{ 'command': 'block-job-resume', 'data': { 'device': 'str' } }
+{ 'command': 'block-job-resume', 'data': { 'device': 'str' },
+  'allow-preconfig': true }
 
 ##
 # @block-job-complete:
@@ -2802,7 +2826,8 @@
 #
 # Since: 1.3
 ##
-{ 'command': 'block-job-complete', 'data': { 'device': 'str' } }
+{ 'command': 'block-job-complete', 'data': { 'device': 'str' },
+  'allow-preconfig': true }
 
 ##
 # @block-job-dismiss:
@@ -2822,7 +2847,8 @@
 #
 # Since: 2.12
 ##
-{ 'command': 'block-job-dismiss', 'data': { 'id': 'str' } }
+{ 'command': 'block-job-dismiss', 'data': { 'id': 'str' },
+  'allow-preconfig': true }
 
 ##
 # @block-job-finalize:
@@ -2840,7 +2866,8 @@
 #
 # Since: 2.12
 ##
-{ 'command': 'block-job-finalize', 'data': { 'id': 'str' } }
+{ 'command': 'block-job-finalize', 'data': { 'id': 'str' },
+  'allow-preconfig': true }
 
 ##
 # @BlockdevDiscardOptions:
@@ -3066,7 +3093,6 @@
   'base': 'BlockdevOptionsGenericFormat',
   'data': { '*key-secret': 'str' } }
 
-
 ##
 # @BlockdevOptionsGenericCOWFormat:
 #
@@ -3180,8 +3206,6 @@
 { 'struct': 'BlockdevOptionsQcow',
   'base': 'BlockdevOptionsGenericCOWFormat',
   'data': { '*encrypt': 'BlockdevQcowEncryption' } }
-
-
 
 ##
 # @BlockdevQcow2EncryptionFormat:
@@ -3338,15 +3362,14 @@
 ##
 # @BlockdevOptionsSsh:
 #
-# @server:              host address
+# @server: host address
 #
-# @path:                path to the image on the host
+# @path: path to the image on the host
 #
-# @user:                user as which to connect, defaults to current
-#                       local user name
+# @user: user as which to connect, defaults to current local user name
 #
-# @host-key-check:      Defines how and what to check the host key against
-#                       (default: known_hosts)
+# @host-key-check: Defines how and what to check the host key against
+#                  (default: known_hosts)
 #
 # Since: 2.9
 ##
@@ -3355,7 +3378,6 @@
             'path': 'str',
             '*user': 'str',
             '*host-key-check': 'SshHostKeyCheck' } }
-
 
 ##
 # @BlkdebugEvent:
@@ -3719,7 +3741,6 @@
             '*initiator-name': 'str',
             '*header-digest': 'IscsiHeaderDigest',
             '*timeout': 'int' } }
-
 
 ##
 # @RbdAuthMode:
@@ -4138,6 +4159,7 @@
 # @throttle-group: the name of the throttle-group object to use. It
 #                  must already exist.
 # @file: reference to or definition of the data source block device
+#
 # Since: 2.11
 ##
 { 'struct': 'BlockdevOptionsThrottle',
@@ -4361,7 +4383,8 @@
 # <- { "return": {} }
 #
 ##
-{ 'command': 'blockdev-add', 'data': 'BlockdevOptions', 'boxed': true }
+{ 'command': 'blockdev-add', 'data': 'BlockdevOptions', 'boxed': true,
+  'allow-preconfig': true }
 
 ##
 # @blockdev-reopen:
@@ -4405,7 +4428,8 @@
 # Since: 6.1
 ##
 { 'command': 'blockdev-reopen',
-  'data': { 'options': ['BlockdevOptions'] } }
+  'data': { 'options': ['BlockdevOptions'] },
+  'allow-preconfig': true }
 
 ##
 # @blockdev-del:
@@ -4438,7 +4462,8 @@
 # <- { "return": {} }
 #
 ##
-{ 'command': 'blockdev-del', 'data': { 'node-name': 'str' } }
+{ 'command': 'blockdev-del', 'data': { 'node-name': 'str' },
+  'allow-preconfig': true }
 
 ##
 # @BlockdevCreateOptionsFile:
@@ -4554,14 +4579,13 @@
 ##
 # @BlockdevQcow2Version:
 #
-# @v2:  The original QCOW2 format as introduced in qemu 0.10 (version 2)
-# @v3:  The extended QCOW2 format as introduced in qemu 1.1 (version 3)
+# @v2: The original QCOW2 format as introduced in qemu 0.10 (version 2)
+# @v3: The extended QCOW2 format as introduced in qemu 1.1 (version 3)
 #
 # Since: 2.12
 ##
 { 'enum': 'BlockdevQcow2Version',
   'data': [ 'v2', 'v3' ] }
-
 
 ##
 # @Qcow2CompressionType:
@@ -4669,18 +4693,18 @@
 #
 # Subformat options for VMDK images
 #
-# @monolithicSparse:     Single file image with sparse cluster allocation
+# @monolithicSparse: Single file image with sparse cluster allocation
 #
-# @monolithicFlat:       Single flat data image and a descriptor file
+# @monolithicFlat: Single flat data image and a descriptor file
 #
 # @twoGbMaxExtentSparse: Data is split into 2GB (per virtual LBA) sparse extent
 #                        files, in addition to a descriptor file
 #
-# @twoGbMaxExtentFlat:   Data is split into 2GB (per virtual LBA) flat extent
-#                        files, in addition to a descriptor file
+# @twoGbMaxExtentFlat: Data is split into 2GB (per virtual LBA) flat extent
+#                      files, in addition to a descriptor file
 #
-# @streamOptimized:      Single file image sparse cluster allocation, optimized
-#                        for streaming over network.
+# @streamOptimized: Single file image sparse cluster allocation, optimized
+#                   for streaming over network.
 #
 # Since: 4.0
 ##
@@ -4736,7 +4760,6 @@
             '*toolsversion':    'str',
             '*zeroed-grain':    'bool' } }
 
-
 ##
 # @BlockdevCreateOptionsSsh:
 #
@@ -4772,7 +4795,7 @@
 # @BlockdevVhdxSubformat:
 #
 # @dynamic: Growing image file
-# @fixed:   Preallocated fixed-size image file
+# @fixed: Preallocated fixed-size image file
 #
 # Since: 2.12
 ##
@@ -4810,7 +4833,7 @@
 # @BlockdevVpcSubformat:
 #
 # @dynamic: Growing image file
-# @fixed:   Preallocated fixed-size image file
+# @fixed: Preallocated fixed-size image file
 #
 # Since: 2.12
 ##
@@ -4873,15 +4896,16 @@
 # Starts a job to create an image format on a given node. The job is
 # automatically finalized, but a manual job-dismiss is required.
 #
-# @job-id:          Identifier for the newly created job.
+# @job-id: Identifier for the newly created job.
 #
-# @options:         Options for the image creation.
+# @options: Options for the image creation.
 #
 # Since: 3.0
 ##
 { 'command': 'blockdev-create',
   'data': { 'job-id': 'str',
-            'options': 'BlockdevCreateOptions' } }
+            'options': 'BlockdevCreateOptions' },
+  'allow-preconfig': true }
 
 ##
 # @BlockdevAmendOptionsLUKS:
@@ -4913,7 +4937,7 @@
 #
 # Options for amending an image format
 #
-# @driver:          Block driver of the node to amend.
+# @driver: Block driver of the node to amend.
 #
 # Since: 5.1
 ##
@@ -4931,17 +4955,17 @@
 # Starts a job to amend format specific options of an existing open block device
 # The job is automatically finalized, but a manual job-dismiss is required.
 #
-# @job-id:          Identifier for the newly created job.
+# @job-id: Identifier for the newly created job.
 #
-# @node-name:       Name of the block node to work on
+# @node-name: Name of the block node to work on
 #
-# @options:         Options (driver specific)
+# @options: Options (driver specific)
 #
-# @force:           Allow unsafe operations, format specific
-#                   For luks that allows erase of the last active keyslot
-#                   (permanent loss of data),
-#                   and replacement of an active keyslot
-#                   (possible loss of data if IO error happens)
+# @force: Allow unsafe operations, format specific
+#         For luks that allows erase of the last active keyslot
+#         (permanent loss of data),
+#         and replacement of an active keyslot
+#         (possible loss of data if IO error happens)
 #
 # Features:
 # @unstable: This command is experimental.
@@ -4953,7 +4977,8 @@
             'node-name': 'str',
             'options': 'BlockdevAmendOptions',
             '*force': 'bool' },
-  'features': [ 'unstable' ] }
+  'features': [ 'unstable' ],
+  'allow-preconfig': true }
 
 ##
 # @BlockErrorAction:
@@ -4970,7 +4995,6 @@
 ##
 { 'enum': 'BlockErrorAction',
   'data': [ 'ignore', 'report', 'stop' ] }
-
 
 ##
 # @BLOCK_IMAGE_CORRUPTED:
@@ -5006,10 +5030,9 @@
 # Example:
 #
 # <- { "event": "BLOCK_IMAGE_CORRUPTED",
-#      "data": { "device": "ide0-hd0", "node-name": "node0",
-#                "msg": "Prevented active L1 table overwrite", "offset": 196608,
-#                "size": 65536 },
-#      "timestamp": { "seconds": 1378126126, "microseconds": 966463 } }
+#      "data": { "device": "", "node-name": "drive", "fatal": false,
+#                "msg": "L2 table offset 0x2a2a2a00 unaligned (L1 index: 0)" },
+#      "timestamp": { "seconds": 1648243240, "microseconds": 906060 } }
 #
 # Since: 1.7
 ##
@@ -5059,7 +5082,8 @@
 #      "data": { "device": "ide0-hd1",
 #                "node-name": "#block212",
 #                "operation": "write",
-#                "action": "stop" },
+#                "action": "stop",
+#                "reason": "No space left on device" },
 #      "timestamp": { "seconds": 1265044230, "microseconds": 450486 } }
 #
 ##
@@ -5225,8 +5249,8 @@
 #
 # Example:
 #
-# <- { "event": "BLOCK_JOB_WAITING",
-#      "data": { "device": "drive0", "type": "mirror" },
+# <- { "event": "BLOCK_JOB_PENDING",
+#      "data": { "type": "mirror", "id": "backup_1" },
 #      "timestamp": { "seconds": 1265044230, "microseconds": 450486 } }
 #
 ##
@@ -5304,7 +5328,8 @@
 #
 ##
 { 'command': 'block-set-write-threshold',
-  'data': { 'node-name': 'str', 'write-threshold': 'uint64' } }
+  'data': { 'node-name': 'str', 'write-threshold': 'uint64' },
+  'allow-preconfig': true }
 
 ##
 # @x-blockdev-change:
@@ -5365,7 +5390,8 @@
   'data' : { 'parent': 'str',
              '*child': 'str',
              '*node': 'str' },
-  'features': [ 'unstable' ] }
+  'features': [ 'unstable' ],
+  'allow-preconfig': true }
 
 ##
 # @x-blockdev-set-iothread:
@@ -5407,7 +5433,8 @@
   'data' : { 'node-name': 'str',
              'iothread': 'StrOrNull',
              '*force': 'bool' },
-  'features': [ 'unstable' ] }
+  'features': [ 'unstable' ],
+  'allow-preconfig': true }
 
 ##
 # @QuorumOpType:
@@ -5539,7 +5566,8 @@
 #
 ##
 { 'command': 'blockdev-snapshot-internal-sync',
-  'data': 'BlockdevSnapshotInternal' }
+  'data': 'BlockdevSnapshotInternal',
+  'allow-preconfig': true }
 
 ##
 # @blockdev-snapshot-delete-internal-sync:
@@ -5586,4 +5614,5 @@
 ##
 { 'command': 'blockdev-snapshot-delete-internal-sync',
   'data': { 'device': 'str', '*id': 'str', '*name': 'str'},
-  'returns': 'SnapshotInfo' }
+  'returns': 'SnapshotInfo',
+  'allow-preconfig': true }

@@ -17,6 +17,11 @@
  */
 
 #include "qemu/osdep.h"
+#ifdef CONFIG_LINUX
+#include <linux/limits.h>
+#else
+#include <limits.h>
+#endif
 #include <glib/gprintf.h>
 #include "hw/virtio/virtio.h"
 #include "qapi/error.h"
@@ -33,11 +38,6 @@
 #include "migration/blocker.h"
 #include "qemu/xxhash.h"
 #include <math.h>
-#ifdef CONFIG_LINUX
-#include <linux/limits.h>
-#else
-#include <limits.h>
-#endif
 
 int open_fd_hw;
 int total_open_fd;
@@ -203,7 +203,7 @@ void v9fs_path_free(V9fsPath *path)
 }
 
 
-void GCC_FMT_ATTR(2, 3)
+void G_GNUC_PRINTF(2, 3)
 v9fs_path_sprintf(V9fsPath *path, const char *fmt, ...)
 {
     va_list ap;
@@ -1054,6 +1054,8 @@ static void coroutine_fn pdu_complete(V9fsPDU *pdu, ssize_t len)
             }
             len += ret;
             id = P9_RERROR;
+        } else {
+            err = errno_to_dotl(err);
         }
 
         ret = pdu_marshal(pdu, len, "d", err);
@@ -1327,7 +1329,7 @@ static int stat_to_v9stat_dotl(V9fsPDU *pdu, const struct stat *stbuf,
     v9lstat->st_nlink = stbuf->st_nlink;
     v9lstat->st_uid = stbuf->st_uid;
     v9lstat->st_gid = stbuf->st_gid;
-    v9lstat->st_rdev = stbuf->st_rdev;
+    v9lstat->st_rdev = host_dev_to_dotl_dev(stbuf->st_rdev);
     v9lstat->st_size = stbuf->st_size;
     v9lstat->st_blksize = stat_to_iounit(pdu, stbuf);
     v9lstat->st_blocks = stbuf->st_blocks;
@@ -1764,9 +1766,9 @@ static bool same_stat_id(const struct stat *a, const struct stat *b)
 
 static void coroutine_fn v9fs_walk(void *opaque)
 {
-    int name_idx;
+    int name_idx, nwalked;
     g_autofree V9fsQID *qids = NULL;
-    int i, err = 0;
+    int i, err = 0, any_err = 0;
     V9fsPath dpath, path;
     P9ARRAY_REF(V9fsPath) pathes = NULL;
     uint16_t nwnames;
@@ -1832,54 +1834,61 @@ static void coroutine_fn v9fs_walk(void *opaque)
      * driver code altogether inside the following block.
      */
     v9fs_co_run_in_worker({
+        nwalked = 0;
         if (v9fs_request_cancelled(pdu)) {
-            err = -EINTR;
+            any_err |= err = -EINTR;
             break;
         }
         err = s->ops->lstat(&s->ctx, &dpath, &fidst);
         if (err < 0) {
-            err = -errno;
+            any_err |= err = -errno;
             break;
         }
         stbuf = fidst;
-        for (name_idx = 0; name_idx < nwnames; name_idx++) {
+        for (; nwalked < nwnames; nwalked++) {
             if (v9fs_request_cancelled(pdu)) {
-                err = -EINTR;
+                any_err |= err = -EINTR;
                 break;
             }
             if (!same_stat_id(&pdu->s->root_st, &stbuf) ||
-                strcmp("..", wnames[name_idx].data))
+                strcmp("..", wnames[nwalked].data))
             {
                 err = s->ops->name_to_path(&s->ctx, &dpath,
-                                           wnames[name_idx].data,
-                                           &pathes[name_idx]);
+                                           wnames[nwalked].data,
+                                           &pathes[nwalked]);
                 if (err < 0) {
-                    err = -errno;
+                    any_err |= err = -errno;
                     break;
                 }
                 if (v9fs_request_cancelled(pdu)) {
-                    err = -EINTR;
+                    any_err |= err = -EINTR;
                     break;
                 }
-                err = s->ops->lstat(&s->ctx, &pathes[name_idx], &stbuf);
+                err = s->ops->lstat(&s->ctx, &pathes[nwalked], &stbuf);
                 if (err < 0) {
-                    err = -errno;
+                    any_err |= err = -errno;
                     break;
                 }
-                stbufs[name_idx] = stbuf;
-                v9fs_path_copy(&dpath, &pathes[name_idx]);
+                stbufs[nwalked] = stbuf;
+                v9fs_path_copy(&dpath, &pathes[nwalked]);
             }
         }
     });
     /*
      * Handle all the rest of this Twalk request on main thread ...
+     *
+     * NOTE: -EINTR is an exception where we deviate from the protocol spec
+     * and simply send a (R)Lerror response instead of bothering to assemble
+     * a (deducted) Rwalk response; because -EINTR is always the result of a
+     * Tflush request, so client would no longer wait for a response in this
+     * case anyway.
      */
-    if (err < 0) {
+    if ((err < 0 && !nwalked) || err == -EINTR) {
         goto out;
     }
 
-    err = stat_to_qid(pdu, &fidst, &qid);
-    if (err < 0) {
+    any_err |= err = stat_to_qid(pdu, &fidst, &qid);
+    if (err < 0 && !nwalked) {
         goto out;
     }
     stbuf = fidst;
@@ -1888,19 +1897,28 @@ static void coroutine_fn v9fs_walk(void *opaque)
     v9fs_path_copy(&dpath, &fidp->path);
     v9fs_path_copy(&path, &fidp->path);
 
-    for (name_idx = 0; name_idx < nwnames; name_idx++) {
+    for (name_idx = 0; name_idx < nwalked; name_idx++) {
         if (!same_stat_id(&pdu->s->root_st, &stbuf) ||
             strcmp("..", wnames[name_idx].data))
         {
             stbuf = stbufs[name_idx];
-            err = stat_to_qid(pdu, &stbuf, &qid);
+            any_err |= err = stat_to_qid(pdu, &stbuf, &qid);
             if (err < 0) {
-                goto out;
+                break;
             }
             v9fs_path_copy(&path, &pathes[name_idx]);
             v9fs_path_copy(&dpath, &path);
         }
         memcpy(&qids[name_idx], &qid, sizeof(qid));
+    }
+    if (any_err < 0) {
+        if (!name_idx) {
+            /* don't send any QIDs, send Rlerror instead */
+            goto out;
+        } else {
+            /* send QIDs (not Rlerror), but fid MUST remain unaffected */
+            goto send_qids;
+        }
     }
     if (fid == newfid) {
         if (fidp->fid_type != P9_FID_NONE) {
@@ -1919,8 +1937,9 @@ static void coroutine_fn v9fs_walk(void *opaque)
         newfidp->uid = fidp->uid;
         v9fs_path_copy(&newfidp->path, &path);
     }
-    err = v9fs_walk_marshal(pdu, nwnames, qids);
-    trace_v9fs_walk_return(pdu->tag, pdu->id, nwnames, qids);
+send_qids:
+    err = v9fs_walk_marshal(pdu, name_idx, qids);
+    trace_v9fs_walk_return(pdu->tag, pdu->id, name_idx, qids);
 out:
     put_fid(pdu, fidp);
     if (newfidp) {
@@ -3924,6 +3943,24 @@ out_nofid:
     pdu_complete(pdu, err);
     v9fs_string_free(&name);
 }
+
+#if defined(CONFIG_LINUX)
+/* Currently, only Linux has XATTR_SIZE_MAX */
+#define P9_XATTR_SIZE_MAX XATTR_SIZE_MAX
+#elif defined(CONFIG_DARWIN)
+/*
+ * Darwin doesn't seem to define a maximum xattr size in its user
+ * space header, so manually configure it across platforms as 64k.
+ *
+ * Having no limit at all can lead to QEMU crashing during large g_malloc()
+ * calls. Because QEMU does not currently support macOS guests, the below
+ * preliminary solution only works due to its being a reflection of the limit of
+ * Linux guests.
+ */
+#define P9_XATTR_SIZE_MAX 65536
+#else
+#error Missing definition for P9_XATTR_SIZE_MAX for this host system
+#endif
 
 static void coroutine_fn v9fs_xattrcreate(void *opaque)
 {

@@ -26,8 +26,18 @@
 #define QEMU_MAIN_LOOP_H
 
 #include "block/aio.h"
+#include "qom/object.h"
+#include "sysemu/event-loop-base.h"
 
 #define SIG_IPI SIGUSR1
+
+#define TYPE_MAIN_LOOP  "main-loop"
+OBJECT_DECLARE_TYPE(MainLoop, MainLoopClass, MAIN_LOOP)
+
+struct MainLoop {
+    EventLoopBase parent_obj;
+};
+typedef struct MainLoop MainLoop;
 
 /**
  * qemu_init_main_loop: Set up the process so that it can run the main loop.
@@ -270,10 +280,23 @@ bool qemu_mutex_iothread_locked(void);
 bool qemu_in_main_thread(void);
 
 /* Mark and check that the function is part of the global state API. */
+#ifdef CONFIG_COCOA
+/*
+ * When using the Cocoa UI, addRemovableDevicesMenuItems() is called from
+ * a thread different from the QEMU main thread and can not take the BQL,
+ * triggering this assertions in the block layer (commit 0439c5a462).
+ * As the Cocoa fix is not trivial, disable this assertion for the v7.0.0
+ * release (when using Cocoa); we will restore it immediately after the
+ * release.
+ * This issue is tracked as https://gitlab.com/qemu-project/qemu/-/issues/926
+ */
+#define GLOBAL_STATE_CODE()
+#else
 #define GLOBAL_STATE_CODE()                                         \
     do {                                                            \
         assert(qemu_in_main_thread());                              \
     } while (0)
+#endif /* CONFIG_COCOA */
 
 /* Mark and check that the function is part of the I/O API. */
 #define IO_CODE()                                                   \

@@ -42,8 +42,9 @@
 #include "qapi/qmp/qstring.h"
 #include "qapi/qobject-input-visitor.h"
 
-#include "qemu-common.h"
+#include "qemu/help-texts.h"
 #include "qemu-version.h"
+#include "qemu/cutils.h"
 #include "qemu/config-file.h"
 #include "qemu/error-report.h"
 #include "qemu/help_option.h"
@@ -120,6 +121,16 @@ static void help(void)
 "                         vhost-user-blk device over file descriptor\n"
 "\n"
 #endif /* CONFIG_VHOST_USER_BLK_SERVER */
+#ifdef CONFIG_VDUSE_BLK_EXPORT
+"  --export [type=]vduse-blk,id=<id>,node-name=<node-name>\n"
+"           ,name=<vduse-name>[,writable=on|off]\n"
+"           [,num-queues=<num-queues>][,queue-size=<queue-size>]\n"
+"           [,logical-block-size=<logical-block-size>]\n"
+"           [,serial=<serial-number>]\n"
+"                         export the specified block node as a\n"
+"                         vduse-blk device\n"
+"\n"
+#endif /* CONFIG_VDUSE_BLK_EXPORT */
 "  --monitor [chardev=]name[,mode=control][,pretty[=on|off]]\n"
 "                         configure a QMP monitor\n"
 "\n"
@@ -141,7 +152,7 @@ static void help(void)
 "  --pidfile <path>       write process ID to a file after startup\n"
 "\n"
 QEMU_HELP_BOTTOM "\n",
-    error_get_progname());
+    g_get_prgname());
 }
 
 enum {
@@ -392,7 +403,7 @@ int main(int argc, char *argv[])
     if (!trace_init_backends()) {
         return EXIT_FAILURE;
     }
-    qemu_set_log(LOG_TRACE);
+    qemu_set_log(LOG_TRACE, &error_fatal);
 
     qemu_init_main_loop(&error_fatal);
     process_options(argc, argv, false);

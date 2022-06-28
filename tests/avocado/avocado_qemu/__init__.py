@@ -21,6 +21,11 @@ import avocado
 from avocado.utils import cloudinit, datadrainer, process, ssh, vmimage
 from avocado.utils.path import find_command
 
+from qemu.machine import QEMUMachine
+from qemu.utils import (get_info_usernet_hostfwd_port, kvm_available,
+                        tcg_available)
+
+
 #: The QEMU build root directory.  It may also be the source directory
 #: if building from the source dir, but it's safer to use BUILD_DIR for
 #: that purpose.  Be aware that if this code is moved outside of a source
@@ -34,12 +39,6 @@ if os.path.islink(os.path.dirname(os.path.dirname(__file__))):
     SOURCE_DIR = os.path.dirname(os.path.dirname(os.readlink(lnk)))
 else:
     SOURCE_DIR = BUILD_DIR
-
-sys.path.append(os.path.join(SOURCE_DIR, 'python'))
-
-from qemu.machine import QEMUMachine
-from qemu.utils import (get_info_usernet_hostfwd_port, kvm_available,
-                        tcg_available)
 
 
 def has_cmd(name, args=None):
@@ -516,6 +515,8 @@ class LinuxTest(LinuxSSHMixIn, QemuSystemTest):
     distro = None
     username = 'root'
     password = 'password'
+    smp = '2'
+    memory = '1024'
 
     def _set_distro(self):
         distro_name = self.params.get(
@@ -546,8 +547,8 @@ class LinuxTest(LinuxSSHMixIn, QemuSystemTest):
     def setUp(self, ssh_pubkey=None, network_device_type='virtio-net'):
         super().setUp()
         self._set_distro()
-        self.vm.add_args('-smp', '2')
-        self.vm.add_args('-m', '1024')
+        self.vm.add_args('-smp', self.smp)
+        self.vm.add_args('-m', self.memory)
         # The following network device allows for SSH connections
         self.vm.add_args('-netdev', 'user,id=vnet,hostfwd=:127.0.0.1:0-:22',
                          '-device', '%s,netdev=vnet' % network_device_type)
