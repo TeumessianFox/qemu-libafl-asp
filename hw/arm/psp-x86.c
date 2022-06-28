@@ -23,7 +23,6 @@
 #include "sysemu/sysemu.h"
 #include "exec/address-spaces.h"
 #include "hw/sysbus.h"
-#include "qemu-common.h"
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "hw/qdev-properties.h"
