@@ -63,7 +63,7 @@ static void psp_misc_write(void *opaque, hwaddr offset, uint64_t value,
 
     phys_abs = phys_base + offset;
 
-    qemu_log_mask(LOG_UNIMP, "%s: unimplemented device write at 0x%"
+    qemu_log_mask(LOG_UNIMP, "%s: unimplemented device write at: 0x%"
                   HWADDR_PRIx " (size %d, offset 0x%" HWADDR_PRIx ", value " \
                   "0x%lx)\n", misc->ident, phys_abs, size, offset, value);
 }
@@ -87,8 +87,8 @@ static uint64_t psp_misc_read(void *opaque, hwaddr offset, unsigned int size)
 
     phys_abs = phys_base + offset;
 
-    qemu_log_mask(LOG_UNIMP, "%s: unimplemented device read at 0x%"
-                  HWADDR_PRIx " (size %d, offset 0x%" HWADDR_PRIx ", value " \
+    qemu_log_mask(LOG_UNIMP, "%s: unimplemented device read at:  0x%"
+                  HWADDR_PRIX " (size %d, offset 0x%" HWADDR_PRIX ", value " \
                   "0x%lx)\n", misc->ident, phys_abs, size, offset, value);
     return value;
 }
