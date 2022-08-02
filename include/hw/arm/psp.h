@@ -20,6 +20,7 @@
 #define AMD_PSP_H
 
 #include "hw/arm/boot.h"
+#include "hw/arm/psp-fuse.h"
 #include "hw/sysbus.h"
 #include "target/arm/cpu.h"
 #include "hw/arm/psp-misc.h"
@@ -52,6 +53,9 @@
 
 #define PSP_X86_BASE 0x04000000
 #define PSP_X86_NAME "PSP X86"
+
+#define PSP_FUSE_BASE 0x03010104
+#define PSP_FUSE_NAME "PSP Fuse"
 
 #define PSP_UNKNOWN_BASE  0xfc000000
 #define PSP_UNKNOWN_NAME "PSP UNKNOWN"
@@ -104,6 +108,9 @@ typedef struct AmdPspState {
 
   /* CCP */
   CcpV5State ccp;
+
+  /* Fuse */
+  PSPFuseState fuse;
 
 } AmdPspState;
 

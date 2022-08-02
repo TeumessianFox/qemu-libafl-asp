@@ -56,19 +56,9 @@ static uint32_t PspGetSramSize(PspGeneration gen) {
 
 }
 
-static PSPMiscReg psp_regs[] = {
-    {
-        /* MMIO mapped Fuse. */
-        /* TODO: Read this value from other systems, i.e. Ryzen/TR */
-        .addr = 0x03010104,
-        .val = 0x1a060900, /* Value read from a real EPYC system */
-    },
-    {
-        /* TODO: Document from PSPEmu */
-        .addr = 0x0320004c,
-        .val = 0xbc090072,
-    },
-};
+//* TODO: This is currently not mapped */
+//  .addr = 0x0320004c,
+//  .val = 0xbc090072,
 
 /* static const char* GenNames[3] = { "Zen", "Zen+", "Zen2"}; */
 /* TODO: Maybe use TYPE_CPU_CLUSTER to create an SoC with multiple PSP's.
@@ -102,6 +92,8 @@ static void amd_psp_init(Object *obj)
     object_initialize_child(obj, "psp-sts", &s->sts, TYPE_PSP_STS);
 
     object_initialize_child(obj, "psp-ccp", &s->ccp, TYPE_CCP_V5);
+
+    object_initialize_child(obj, "psp-fuse", &s->fuse, TYPE_PSP_FUSE);
 }
 
 static void amd_psp_realize(DeviceState *dev, Error **errp)
@@ -188,9 +180,9 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     sysbus_realize(SYS_BUS_DEVICE(&s->ccp), &error_abort);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccp), 0, PSP_CCP_BASE);
 
-    /* TODO: Is this the way to go? ... */
-    s->base_mem.regs = psp_regs;
-    s->base_mem.regs_count = ARRAY_SIZE(psp_regs);
+    /* Map Fuse */
+    sysbus_realize(SYS_BUS_DEVICE(&s->fuse), &error_abort);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->fuse), 0, PSP_FUSE_BASE);
 
     /* Map the misc device as an overlap with low priority */
     /* This device covers all "unknown" psp registers */
