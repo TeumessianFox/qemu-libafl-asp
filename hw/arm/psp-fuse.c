@@ -10,14 +10,15 @@
 #include "qemu/log.h"
 #include "qapi/error.h"
 #include "hw/sysbus.h"
+#include "hw/qdev-properties.h"
 #include "hw/arm/psp-fuse.h"
 
 static uint64_t psp_fuse_read(void *opaque, hwaddr offset, unsigned int size) {
-    // TODO
+    PSPFuseState * fuse = PSP_FUSE(opaque);
     uint64_t r = 0;
     switch(offset) {
     case 0x0:
-        r = 0x1a060900;
+        r = 0x1a060900 | (fuse->dbg_mode ? (1 << 10) : 0);
         break;
     default:
         qemu_log_mask(LOG_GUEST_ERROR, "%s: bad offset 0x%" HWADDR_PRIx "\n",
@@ -43,10 +44,16 @@ static void psp_fuse_realize(DeviceState *dev, Error **errp)
     sysbus_init_mmio(SYS_BUS_DEVICE(s), &s->iomem);
 }
 
+static Property psp_fuse_properties[] = {
+    DEFINE_PROP_BOOL("dbg_mode", PSPFuseState, dbg_mode, false),
+    DEFINE_PROP_END_OF_LIST(),
+};
+
 static void psp_fuse_class_init(ObjectClass *klass, void * data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     dc->realize = psp_fuse_realize;
+    device_class_set_props(dc, psp_fuse_properties);
 }
 
 static const TypeInfo psp_fuse_info = {

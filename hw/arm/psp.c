@@ -67,14 +67,11 @@ static uint32_t PspGetSramSize(PspGeneration gen) {
 
 /* TODO: Check CPU Object properties */
 
+/* Initialize psp and its device. This should never fail */
 static void amd_psp_init(Object *obj)
 {
 
     AmdPspState *s = AMD_PSP(obj);
-
-    /* TODO: Check which generation we actually are */
-    PspGeneration gen = PspNameToGen("Zen");
-    s->gen = gen;
 
     object_initialize_child(obj, "cpu", &s->cpu,
                             ARM_CPU_TYPE_NAME("cortex-a9"));
@@ -94,11 +91,28 @@ static void amd_psp_init(Object *obj)
     object_initialize_child(obj, "psp-ccp", &s->ccp, TYPE_CCP_V5);
 
     object_initialize_child(obj, "psp-fuse", &s->fuse, TYPE_PSP_FUSE);
+
+    object_initialize_child(obj, "unimp", &s->unimp, TYPE_UNIMPLEMENTED_DEVICE);
 }
 
+/* Realize the psp and configure devices */
 static void amd_psp_realize(DeviceState *dev, Error **errp)
 {
     AmdPspState *s = AMD_PSP(dev);
+
+    // TODO check and set generation
+    PspGeneration gen;
+    if(s->gen_ident) {
+        qemu_log("TODO set generations");
+        exit(1);
+    } else {
+        // default
+        s->gen_ident = g_strdup("Zen");
+        gen = PspNameToGen("Zen");
+    }
+    s->gen = gen;
+    qemu_log("Generation: %s", s->gen_ident);
+
     /* TODO: Maybe use "&error_abort" instead? */
     Error *err = NULL;
     uint32_t sram_size;
@@ -186,12 +200,21 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
 
     /* Map the misc device as an overlap with low priority */
     /* This device covers all "unknown" psp registers */
+    /* TODO reduce this to only cover known misc regs */
     sysbus_mmio_map_overlap(SYS_BUS_DEVICE(&s->base_mem), 0, 0, -1000);
+
+    /* General unimplemented device that maps the whole memory with low priority */
+    qdev_prop_set_string(DEVICE(&s->unimp), "name", "unimp");
+    qdev_prop_set_uint64(DEVICE(&s->unimp), "size", sram_size);
+    sysbus_realize(SYS_BUS_DEVICE(&s->unimp), &error_abort);
+    sysbus_mmio_map_overlap(SYS_BUS_DEVICE(&s->unimp), 0, 0, -1000);
+
 }
 
-/* User-configurable options via "-device 'name','property'=" */
+/* User-configurable options with "-global amd-psp.<property>=<value> */
 static Property amd_psp_properties[] = {
-    DEFINE_PROP_UINT32("generation", AmdPspState, gen, 0),
+    DEFINE_PROP_STRING("generation", AmdPspState, gen_ident),
+    DEFINE_PROP_BOOL("dbg_mode", AmdPspState, dbg_mode, false),
     DEFINE_PROP_END_OF_LIST(),
 };
 

@@ -21,6 +21,7 @@
 
 #include "hw/arm/boot.h"
 #include "hw/arm/psp-fuse.h"
+#include "hw/misc/unimp.h"
 #include "hw/sysbus.h"
 #include "target/arm/cpu.h"
 #include "hw/arm/psp-misc.h"
@@ -85,7 +86,9 @@ typedef struct AmdPspState {
   MemoryRegion sram;
   MemoryRegion rom;
 
+  char * gen_ident;
   PspGeneration gen;
+  bool dbg_mode;
   ARMCPU cpu;
 
   /* This device covers every MMIO address we have not covered somewhere else */
@@ -111,6 +114,9 @@ typedef struct AmdPspState {
 
   /* Fuse */
   PSPFuseState fuse;
+
+  /* General unimplemented devices */
+  UnimplementedDeviceState unimp;
 
 } AmdPspState;
 

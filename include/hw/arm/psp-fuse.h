@@ -22,6 +22,8 @@ struct PSPFuseState {
 
     /*< public >*/
     MemoryRegion iomem;
+
+    bool dbg_mode;
 };
 
 #endif
