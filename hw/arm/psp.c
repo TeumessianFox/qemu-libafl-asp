@@ -128,6 +128,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
         return;
     }
 
+
     object_property_set_uint(OBJECT(&s->smn), "smn-container-base",
                              PSP_SMN_BASE, &error_abort);
     sysbus_realize(SYS_BUS_DEVICE(&s->smn), &err);
@@ -195,12 +196,16 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccp), 0, PSP_CCP_BASE);
 
     /* Map Fuse */
+    if(s->dbg_mode) {
+        /* set dbg_mode if global dbg mode is active */
+        qdev_prop_set_bit(DEVICE(&s->fuse), "dbg_mode", true);
+    }
     sysbus_realize(SYS_BUS_DEVICE(&s->fuse), &error_abort);
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->fuse), 0, PSP_FUSE_BASE);
 
     /* Map the misc device as an overlap with low priority */
     /* This device covers all "unknown" psp registers */
-    /* TODO reduce this to only cover known misc regs */
+    /* TODO reduce this to only cover known misc regs regions */
     sysbus_mmio_map_overlap(SYS_BUS_DEVICE(&s->base_mem), 0, 0, -1000);
 
     /* General unimplemented device that maps the whole memory with low priority */
