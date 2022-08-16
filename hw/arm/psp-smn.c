@@ -175,6 +175,11 @@ static PSPMiscReg psp_regs[] = {
         .addr = 0x18480064,
         .val = BIT(10) | BIT(9),
     },
+    {
+        /* Where in PSPEMU? */
+        .addr = 0x5A078,
+        .val = 0x10,
+    },
 };
 
 static void psp_smn_update_slot(PSPSmnState *smn, uint32_t idx) {
