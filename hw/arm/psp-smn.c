@@ -180,6 +180,11 @@ static PSPMiscReg psp_regs[] = {
         .addr = 0x5A078,
         .val = 0x10,
     },
+    {
+        .addr = 0x5A870,
+        .val = 0x1,
+    },
+
 };
 
 static void psp_smn_update_slot(PSPSmnState *smn, uint32_t idx) {
