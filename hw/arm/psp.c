@@ -38,7 +38,7 @@
 /* TODO: use mmio_map_overlap with memory_regions_dispatch_rw to log access to SPI flash */
 
 PspGeneration PspNameToGen(const char* name) {
-  /* TODO: Make the generation a property of the "psp" class */
+  /* TODO: FIXME */
   return ZEN;
 }
 
@@ -132,31 +132,20 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     }
 
 
-    object_property_set_uint(OBJECT(&s->smn), "smn-container-base",
-                             PSP_SMN_BASE, &error_abort);
-    sysbus_realize(SYS_BUS_DEVICE(&s->smn), &err);
+    qdev_prop_set_int32(DEVICE(&s->smn), "smn-container-base", PSP_SMN_BASE);
+    if(!sysbus_realize(SYS_BUS_DEVICE(&s->smn), errp)) {
+        return;
+    }
 
     //object_property_set_uint(OBJECT(&s->x86), "x86-container-base",
     //                        PSP_X86_BASE, &error_abort);
     //sysbus_realize(SYS_BUS_DEVICE(&s->x86), &err);
 
-    object_property_set_uint(OBJECT(&s->base_mem), "psp_misc_msize",
-                             (1UL << 32), &err);
-    if (err != NULL) {
-        error_propagate(errp, err);
-        return;
-    }
+    qdev_prop_set_uint64(DEVICE(&s->base_mem), "psp_misc_msize", (1UL << 32));
 
-    object_property_set_str(OBJECT(&s->base_mem), "psp_misc_ident",
-                            "BASE MEM", &error_abort);
-    if (err != NULL) {
-        error_propagate(errp, err);
-        return;
-    }
+    qdev_prop_set_string(DEVICE(&s->base_mem), "psp_misc_ident", "BASE MEM");
 
-    sysbus_realize(SYS_BUS_DEVICE(&s->base_mem), &err);
-    if (err != NULL) {
-        error_propagate(errp, err);
+    if(!sysbus_realize(SYS_BUS_DEVICE(&s->base_mem), &err)) {
         return;
     }
 
@@ -184,18 +173,28 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     /* Map X86 control registers */
     //sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 2, PSP_X86_CTRL3_BASE);
 
-    /* Map timers */
-    sysbus_realize(SYS_BUS_DEVICE(&s->timer1), &err);
+    /* Map timer 1 */
+    if(!sysbus_realize(SYS_BUS_DEVICE(&s->timer1), errp)) {
+        return;
+    }
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->timer1), 0, PSP_TIMER1_BASE);
-    sysbus_realize(SYS_BUS_DEVICE(&s->timer2), &err);
+
+    /* Map timer 2 */
+    if(!sysbus_realize(SYS_BUS_DEVICE(&s->timer2), errp)) {
+        return;
+    }
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->timer2), 0, PSP_TIMER2_BASE);
 
     /* Map PSP Status port */
-    sysbus_realize(SYS_BUS_DEVICE(&s->sts), &error_abort);
+    if(!sysbus_realize(SYS_BUS_DEVICE(&s->sts), errp)) {
+        return;
+    }
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->sts), 0, PSP_STS_ZEN1_BASE);
 
     /* Map CCP */
-    sysbus_realize(SYS_BUS_DEVICE(&s->ccp), &error_abort);
+    if(!sysbus_realize(SYS_BUS_DEVICE(&s->ccp), &error_abort)) {
+        return;
+    }
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccp), 0, PSP_CCP_BASE);
 
     /* Map Fuse */
@@ -203,7 +202,9 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
         /* set dbg_mode if global dbg mode is active */
         qdev_prop_set_bit(DEVICE(&s->fuse), "dbg_mode", true);
     }
-    sysbus_realize(SYS_BUS_DEVICE(&s->fuse), &error_abort);
+    if(!sysbus_realize(SYS_BUS_DEVICE(&s->fuse), &error_abort)) {
+        return;
+    }
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->fuse), 0, PSP_FUSE_BASE);
 
     /* Map the misc device as an overlap with low priority */
@@ -214,7 +215,9 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     /* General unimplemented device that maps the whole memory with low priority */
     qdev_prop_set_string(DEVICE(&s->unimp), "name", "unimp");
     qdev_prop_set_uint64(DEVICE(&s->unimp), "size", sram_size);
-    sysbus_realize(SYS_BUS_DEVICE(&s->unimp), &error_abort);
+    if(!sysbus_realize(SYS_BUS_DEVICE(&s->unimp), &error_abort)) {
+        return;
+    }
     sysbus_mmio_map_overlap(SYS_BUS_DEVICE(&s->unimp), 0, 0, -1000);
 
 }
