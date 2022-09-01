@@ -17,3 +17,4 @@ GTAGS
 *.patch
 *.gcov
 .cache
+compile_commands.json
