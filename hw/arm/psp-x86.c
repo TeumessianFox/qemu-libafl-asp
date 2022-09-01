@@ -33,14 +33,16 @@
 #include "qemu/log.h"
 #include "hw/arm/psp-x86.h"
 
-static PSPMiscReg psp_regs[] = {
-    {
-        /* The off chip bootloader waits for bits 0-2 to be set. */
-        .addr = 0xfed81e77,
-        .val = 0x7,
-    },
-
-};
+/* TODO: Refactor */
+//static PSPMiscReg psp_regs[] = {
+//    {
+//        /* The off chip bootloader waits for bits 0-2 to be set. */
+//        .addr = 0xfed81e77,
+//        .val = 0x7,
+//    },
+//
+//};
+//
 /* TODO: Refactor read/write methods */
 /* TODO: fix log -> use log trace for non errors */
 
@@ -331,9 +333,9 @@ static void psp_x86_realize(DeviceState *dev, Error **errp) {
                    0, 115200, serial_hd(0), DEVICE_NATIVE_ENDIAN);
 
     /* Connect the misc device to the x86 address space */
-    /* TODO: Is this the way to go? ... */
-    s->psp_x86_misc.regs = psp_regs;
-    s->psp_x86_misc.regs_count = ARRAY_SIZE(psp_regs);
+    /* TODO: FIX */
+    //s->psp_x86_misc.regs = psp_regs;
+    //s->psp_x86_misc.regs_count = ARRAY_SIZE(psp_regs);
 
     mr_x86_misc = sysbus_mmio_get_region(SYS_BUS_DEVICE(&s->psp_x86_misc), 0);
     memory_region_add_subregion_overlap(&s->psp_x86_space, 0x0, mr_x86_misc,

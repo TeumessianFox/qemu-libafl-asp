@@ -33,12 +33,6 @@ typedef struct PSPMiscState {
     SysBusDevice parent_obj;
     MemoryRegion iomem;
 
-    /* regs_count: Must be set to the number of PSPMiscReg elements in "regs" */
-    uint32_t regs_count;
-
-    /* regs: Pointer to an array of PSPMiscReg */
-    PSPMiscReg *regs;
-
     /* Size of MMIO region covered by this instance */
     uint64_t mmio_size;
 
