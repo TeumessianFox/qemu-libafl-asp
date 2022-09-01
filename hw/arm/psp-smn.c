@@ -114,7 +114,7 @@ static PSPMiscReg psp_regs[] = {
     {
         /* Read by the on chip bootloader and acted upon. */
         .addr = 0x0106e034,
-        .val = 0x1e313,
+        .val = 0x1e312,
     },
     {
         /* Read by the on chip bootloader and acted upon. */
