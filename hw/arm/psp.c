@@ -106,7 +106,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     // TODO check and set generation
     PspGeneration gen;
     if(s->gen_ident) {
-        qemu_log("TODO set generations");
+        qemu_log("TODO set generations\n");
         exit(1);
     } else {
         // default
@@ -114,7 +114,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
         gen = PspNameToGen("Zen");
     }
     s->gen = gen;
-    qemu_log("Generation: %s", s->gen_ident);
+    qemu_log("Generation: %s\n", s->gen_ident);
 
     /* TODO: Maybe use "&error_abort" instead? */
     Error *err = NULL;
