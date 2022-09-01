@@ -34,6 +34,8 @@ typedef struct PSPSmnFlashState {
 
     MemoryRegion psp_smn_flash;
 
+    char * flash_img;
+
 
 } PSPSmnFlashState;
 #endif

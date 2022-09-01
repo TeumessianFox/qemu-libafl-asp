@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "qemu/osdep.h"
+#include "qemu/log.h"
 #include "qapi/error.h"
 #include "qemu/module.h"
 #include "sysemu/sysemu.h"
@@ -42,22 +43,43 @@ extern char * smn_bios_name;
 /*     .impl.max_access_size = 4, */
 /* }; */
 
-static void psp_smn_flash_init(Object *obj)
+// TODO make available via -bios flag from cmdline by passing it through smn
+static void psp_smn_flash_realize(DeviceState *dev, Error **errp)
 {
-    PSPSmnFlashState *s = PSP_SMN_FLASH(obj);
+    PSPSmnFlashState *s = PSP_SMN_FLASH(dev);
+    Object *obj = OBJECT(dev);
 
     memory_region_init_ram(&s->psp_smn_flash, obj, "flash",
-                           PSP_SMN_FLASH_SIZE_16, &error_abort);
+                           PSP_SMN_FLASH_SIZE_16, errp);
 
-    load_image_mr(smn_bios_name, &s->psp_smn_flash);
+    if(!s->flash_img) {
+        qemu_log_mask(LOG_GUEST_ERROR, "No flash image provided for smn\n");
+        exit(1);
+    }
+
+    if(load_image_mr(s->flash_img, &s->psp_smn_flash) < 0 ) {
+        qemu_log_mask(LOG_GUEST_ERROR, "Could not load flash image provided for smn\n");
+        exit(1);
+    }
+}
+
+static Property psp_smn_flash_properties[] = {
+    DEFINE_PROP_STRING("flash_img", PSPSmnFlashState, flash_img),
+    DEFINE_PROP_END_OF_LIST(),
+};
+
+static void psp_smn_flash_class_init(ObjectClass *klass, void * data)
+{
+    DeviceClass *dc = DEVICE_CLASS(klass);
+    dc->realize = psp_smn_flash_realize;
+    device_class_set_props(dc, psp_smn_flash_properties);
 }
 
 static const TypeInfo psp_smn_flash_info = {
     .name = TYPE_PSP_SMN_FLASH,
     .parent = TYPE_SYS_BUS_DEVICE,
-    .instance_init = psp_smn_flash_init,
     .instance_size = sizeof(PSPSmnFlashState),
-
+    .class_init = psp_smn_flash_class_init,
 };
 
 static void psp_smn_register_types(void) {
