@@ -33,15 +33,13 @@
 #include "qemu/log.h"
 #include "hw/arm/psp-misc.h"
 
-/* TODO: Migrate misc regs from PSPEmu.
- * TODO: Implement call back to handle more complicated misc devices
- */
+/* TODO make values offset based only starting from mmio base */
 
 /* Look up misc values from the smn memory space
  * @addr The phys address in the smn memory
  * @val The loaded value
  * @return If a value was found
- * TODO
+ * TODO pass PSPMisc ref for ZEN version dependent values
  */
 static int psp_misc_load_value(hwaddr addr, uint64_t * val)
 {
@@ -158,6 +156,10 @@ static int psp_misc_load_value(hwaddr addr, uint64_t * val)
 
     case 0x5A870:
         *val = 0x1; break;
+
+    // TODO make dependent on ZEN version
+    case 0x0320004c:
+        *val = 0xbc090071; break;
 
     default:
         /* No value found */
