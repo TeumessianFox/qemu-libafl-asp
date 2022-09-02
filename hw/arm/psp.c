@@ -192,7 +192,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->sts), 0, PSP_STS_ZEN1_BASE);
 
     /* Map CCP */
-    if(!sysbus_realize(SYS_BUS_DEVICE(&s->ccp), &error_abort)) {
+    if(!sysbus_realize(SYS_BUS_DEVICE(&s->ccp), errp)) {
         return;
     }
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->ccp), 0, PSP_CCP_BASE);
@@ -202,7 +202,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
         /* set dbg_mode if global dbg mode is active */
         qdev_prop_set_bit(DEVICE(&s->fuse), "dbg_mode", true);
     }
-    if(!sysbus_realize(SYS_BUS_DEVICE(&s->fuse), &error_abort)) {
+    if(!sysbus_realize(SYS_BUS_DEVICE(&s->fuse), errp)) {
         return;
     }
     sysbus_mmio_map(SYS_BUS_DEVICE(&s->fuse), 0, PSP_FUSE_BASE);
