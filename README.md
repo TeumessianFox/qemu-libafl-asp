@@ -28,7 +28,6 @@ ForkLibAFLQemu --> LibAFLPSPQemu;
 ```
 git remote add qemu-ASP git@github.com:pascalharp/qemu.git
 git remote add qemu-LibAFL-fork git@github.com:TeumessianFox/qemu-libafl-bridge.git
-git remote add qemu-LibAFL https://github.com/AFLplusplus/qemu-libafl-bridge
 ```
 
 2. Fetch remotes
