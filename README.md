@@ -17,3 +17,8 @@ VanillaQemu --> LibAFLQemu;
 LibAFLQemu --> ForkLibAFLQemu;
 ForkLibAFLQemu --> LibAFLPSPQemu;
 ```
+### Repos
+- [Vanilla QEMU](https://github.com/qemu/qemu)
+- [AMD SP QEMU](https://github.com/pascalharp/qemu)
+- [LibAFL QEMU](https://github.com/AFLplusplus/qemu-libafl-bridge)
+- [LibAFL QEMU fork (with patches)](https://github.com/TeumessianFox/qemu-libafl-bridge)
