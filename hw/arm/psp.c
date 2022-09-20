@@ -76,8 +76,11 @@ static void amd_psp_init(Object *obj)
     object_initialize_child(obj, "cpu", &s->cpu,
                             ARM_CPU_TYPE_NAME("cortex-a9"));
 
-    // TODO verify
-    s->cpu.reset_sctlr = 0;
+    /*
+     * Based on the reset in target/arm/cpu_tcg.c cortex_a9_initfn
+     * Deactivates all flags except V bit (Hivecs)
+     */
+    s->cpu.reset_sctlr = 0x00c52078;
 
     object_initialize_child(obj, "smn", &s->smn, TYPE_PSP_SMN);
 
