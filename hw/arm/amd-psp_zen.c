@@ -31,9 +31,6 @@
 #include "hw/loader.h"
 #include "hw/arm/psp.h"
 
-// FIXME remove once done properly
-char * smn_bios_name = NULL;
-
 static void zen_init(MachineState *machine) {
 
     AmdPspState *psp;
@@ -46,15 +43,10 @@ static void zen_init(MachineState *machine) {
 
     object_property_set_bool(OBJECT(psp), "realized", true, &error_abort);
 
-    /* TODO rework temporary fix
-     * also consider emulating bios if not set
-     */
-    if(!machine->firmware) {
-        error_report("No bios set, required");
-        exit(1);
-    }
-
-    smn_bios_name = machine->firmware;
+    /* TODO consider passing to smn if flash_img not set */
+    /* TODO consider emulating bios if not set */
+    //if(!machine->firmware) {
+    //}
 
     /* TODO rework: Use generic_loader: docs/system/generic-loader.txt */
     /* psp_load_firmware(psp,PSP_ROM_BASE); */

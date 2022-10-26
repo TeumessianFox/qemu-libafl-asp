@@ -32,9 +32,6 @@
 #include "qemu/log.h"
 #include "hw/arm/psp-smn-flash.h"
 
-//FIXME remove once done properly
-extern char * smn_bios_name;
-
 /* static const MemoryRegionOps smn_flash_ops = { */
 /*     .read = psp_smn_flash_read, */
 /*     .write = psp_smn_flash_write, */
@@ -43,7 +40,6 @@ extern char * smn_bios_name;
 /*     .impl.max_access_size = 4, */
 /* }; */
 
-// TODO make available via -bios flag from cmdline by passing it through smn
 static void psp_smn_flash_realize(DeviceState *dev, Error **errp)
 {
     PSPSmnFlashState *s = PSP_SMN_FLASH(dev);
