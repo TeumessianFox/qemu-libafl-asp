@@ -56,13 +56,7 @@ static uint32_t PspGetSramSize(PspGeneration gen) {
 
 }
 
-//* TODO: This is currently not mapped */
-//  .addr = 0x0320004c,
-//  .val = 0xbc090072,
-
 /* static const char* GenNames[3] = { "Zen", "Zen+", "Zen2"}; */
-/* TODO: Maybe use TYPE_CPU_CLUSTER to create an SoC with multiple PSP's.
- * Example in armsse.c: armsse_init() */
 /* NOTE: MachineState = state of instantiated MachineClass */
 
 /* TODO: Check CPU Object properties */
@@ -209,7 +203,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
 
     /* Map the misc device as an overlap with low priority */
     /* This device covers all "unknown" psp registers */
-    /* TODO reduce this to only cover known misc regs regions */
+    /* TODO reduce this to only cover the known mmio region */
     sysbus_mmio_map_overlap(SYS_BUS_DEVICE(&s->base_mem), 0, 0, -1000);
 
     /* General unimplemented device that maps the whole memory with low priority */
