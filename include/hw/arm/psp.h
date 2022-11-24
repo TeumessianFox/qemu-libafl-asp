@@ -78,6 +78,18 @@ typedef enum PspGeneration {
   ZEN2,
 } PspGeneration;
 
+typedef struct AmdPspConfiguration {
+    PspGeneration gen;
+    uint32_t sram_size;
+    uint32_t sram_base;
+    uint32_t rom_size;
+    uint32_t rom_base;
+    uint32_t sts_base;
+    uint32_t smn_ctrl_base;
+    uint32_t smn_container_base;
+    uint32_t smn_flash_base;
+} AmdPspConfiguration;
+
 typedef struct AmdPspState {
   /*< private >*/
   DeviceState parent_obj;
@@ -88,6 +100,7 @@ typedef struct AmdPspState {
 
   char * gen_ident;
   PspGeneration gen;
+  AmdPspConfiguration * conf;
   bool dbg_mode;
   ARMCPU cpu;
 

@@ -31,32 +31,46 @@
 #include "hw/loader.h"
 #include "hw/arm/psp.h"
 
-static void zen_init(MachineState *machine) {
+/* Setup inspired from raspi.c */
 
-    AmdPspState *psp;
+typedef struct AmdPspMachineState {
+    /*< private >*/
+    MachineState parent_obj;
+    /*< public >*/
+    AmdPspState soc;
+} AmdPspMachineState;
 
-    psp = AMD_PSP(object_new(TYPE_AMD_PSP));
-    object_property_add_child(OBJECT(machine), "soc", OBJECT(psp));
+typedef struct AmdPspMachineClass {
+    /*< private >*/
+    MachineClass parent_obj;
+    /*< public >*/
+    PspGeneration gen;
+} AmdPspMachineClass;
 
-    /* Why do we call "... unref" ? */
-    //object_unref(OBJECT(psp));
+#define TYPE_AMD_PSP_MACHINE MACHINE_TYPE_NAME("amd-psp-common")
+DECLARE_OBJ_CHECKERS(AmdPspMachineState, AmdPspMachineClass,
+                     AMD_PSP_MACHINE, TYPE_AMD_PSP_MACHINE)
 
-    object_property_set_bool(OBJECT(psp), "realized", true, &error_abort);
+static void zen_init_common(MachineState *machine) {
+    AmdPspMachineState *ms = AMD_PSP_MACHINE(machine);
+    AmdPspMachineClass *mc = AMD_PSP_MACHINE_GET_CLASS(machine);
 
-    /* TODO consider passing to smn if flash_img not set */
-    /* TODO consider emulating bios if not set */
-    //if(!machine->firmware) {
-    //}
+    /* Initialize Soc */
+    object_initialize_child(OBJECT(machine), "soc", &ms->soc, TYPE_AMD_PSP);
+    object_property_set_uint(OBJECT(&ms->soc), "gen", mc->gen, &error_abort);
+    qdev_realize(DEVICE(&ms->soc), NULL, &error_fatal);
 
-    /* TODO rework: Use generic_loader: docs/system/generic-loader.txt */
-    /* psp_load_firmware(psp,PSP_ROM_BASE); */
-    /* Set PC to high-vec */
-    psp->cpu.env.regs[15] = 0xffff0000;
+    /* Set pc, Is there a more elegent way? */
+    ms->soc.cpu.env.regs[15] = 0xffff0000;
+
+    /* TODO trigger on -kernel flag if it is provided */
+    /* TODO can we maybe use -pflash flag for off chip bl? */
+    /* TODO consider emulating/skipping on chip bl if not set */
 }
 
-static void psp_zen_machine_init(MachineClass *mc) {
+static void psp_zen_machine_common_init(MachineClass *mc, PspGeneration gen) {
     mc->desc = "AMD PSP Zen";
-    mc->init = &zen_init;
+    mc->init = zen_init_common;
     mc->block_default_type = IF_NONE;
     mc->min_cpus = 1;
     mc->max_cpus = 1;
@@ -71,4 +85,48 @@ static void psp_zen_machine_init(MachineClass *mc) {
     mc->default_ram_size = 1 * GiB;
     mc->default_ram_id = "psp-ram";
 }
-DEFINE_MACHINE("amd-psp_zen", psp_zen_machine_init)
+
+static void psp_zen_machine_init(ObjectClass *oc, void *data) {
+    MachineClass *mc = MACHINE_CLASS(oc);
+    AmdPspMachineClass *apmc = AMD_PSP_MACHINE_CLASS(oc);
+    apmc->gen = ZEN;
+    psp_zen_machine_common_init(mc, ZEN);
+}
+
+static void psp_zen_plus_machine_init(ObjectClass *oc, void *data) {
+    MachineClass *mc = MACHINE_CLASS(oc);
+    AmdPspMachineClass *apmc = AMD_PSP_MACHINE_CLASS(oc);
+    apmc->gen = ZEN_PLUS;
+    psp_zen_machine_common_init(mc, ZEN_PLUS);
+}
+
+static void psp_zen_two_machine_init(ObjectClass *oc, void *data) {
+    MachineClass *mc = MACHINE_CLASS(oc);
+    AmdPspMachineClass *apmc = AMD_PSP_MACHINE_CLASS(oc);
+    apmc->gen = ZEN2;
+    psp_zen_machine_common_init(mc, ZEN2);
+}
+
+static const TypeInfo amd_psp_machine_types[] = {
+    {
+        .name           = MACHINE_TYPE_NAME("amd-psp-zen"),
+        .parent         = TYPE_AMD_PSP_MACHINE,
+        .class_init     = psp_zen_machine_init,
+    }, {
+        .name           = MACHINE_TYPE_NAME("amd-psp-zen+"),
+        .parent         = TYPE_AMD_PSP_MACHINE,
+        .class_init     = psp_zen_plus_machine_init,
+    }, {
+        .name           = MACHINE_TYPE_NAME("amd-psp-zen2"),
+        .parent         = TYPE_AMD_PSP_MACHINE,
+        .class_init     = psp_zen_two_machine_init,
+    }, {
+        .name           = TYPE_AMD_PSP_MACHINE,
+        .parent         = TYPE_MACHINE,
+        .instance_size  = sizeof(AmdPspMachineState),
+        .class_size     = sizeof(AmdPspMachineClass),
+        .abstract       = true,
+    }
+};
+
+DEFINE_TYPES(amd_psp_machine_types);
