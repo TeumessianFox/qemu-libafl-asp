@@ -35,9 +35,7 @@
 #include "hw/arm/psp-sts.h"
 #include "qemu/log.h"
 
-/* TODO: use mmio_map_overlap with memory_regions_dispatch_rw to log access to SPI flash */
-
-/* TODO: Create different PSP Class impls instead of going by gen. Look at raspi for example */
+// TODO: use mmio_map_overlap with memory_regions_dispatch_rw to log access to SPI flash
 
 static const char * amd_psp_gen_ident[] = {
     [ZEN] = "Ryzen Zen",
@@ -45,42 +43,27 @@ static const char * amd_psp_gen_ident[] = {
     [ZEN2] = "Ryzen Zen 2"
 };
 
-static AmdPspConfiguration configurations[] = {
-    [ZEN] = {
-        .sram_size = 0x40000,
-        .sram_base = 0,
-        .rom_size = 0x10000,
-        .rom_base = 0xffff0000,
-        .sts_base = 0x032000e8,
-        .smn_ctrl_base = 0x03220000,
-        .smn_container_base = 0x01000000,
-        .smn_flash_base = 0,
-    },
-    [ZEN_PLUS] = {
-        .sram_size = 0x40000,
-        .sram_base = 0,
-        .rom_size = 0x10000,
-        .rom_base = 0xffff0000,
-        .sts_base = 0x032000e8,
-        .smn_ctrl_base = 0x03220000,
-        .smn_container_base = 0,
-        .smn_flash_base = 0,
-    },
-    [ZEN2] = {
-        .sram_size = 0x40000,
-        .sram_base = 0,
-        .rom_size = 0x10000,
-        .rom_base = 0xffff0000,
-        .sts_base = 0x032000d8,
-        .smn_ctrl_base = 0x03220000,
-        .smn_container_base = 0,
-        .smn_flash_base = 0,
-    }
-};
+/* The base class */
+typedef struct AmdPspClass {
+    /*< private >*/
+    DeviceClass parent_class;
+    /*< public >*/
+    uint64_t sram_size;
+    hwaddr sram_base;
+    uint64_t rom_size;
+    hwaddr rom_base;
 
-/* NOTE: MachineState = state of instantiated MachineClass */
+    hwaddr sts_base;
+    hwaddr smn_ctrl_base;
+    hwaddr smn_container_base;
+} AmdPspClass;
 
-/* TODO: Check CPU Object properties */
+#define AMD_PSP_CLASS(klass) \
+    OBJECT_CLASS_CHECK(AmdPspClass, (klass), TYPE_AMD_PSP)
+#define AMD_PSP_GET_CLASS(obj) \
+    OBJECT_GET_CLASS(AmdPspClass, (obj), TYPE_AMD_PSP)
+
+// TODO: Check CPU Object properties
 
 /* Initialize psp and its device. This should never fail */
 static void amd_psp_init(Object *obj)
@@ -120,14 +103,14 @@ static void amd_psp_init(Object *obj)
 static void amd_psp_realize(DeviceState *dev, Error **errp)
 {
     AmdPspState *s = AMD_PSP(dev);
+    AmdPspClass *c = AMD_PSP_GET_CLASS(dev);
 
-    qemu_log("Generation: %s\n", amd_psp_gen_ident[s->gen]);
-    s->conf = &configurations[s->gen];
+    qemu_log("Generation: %s\n", DEVICE_GET_CLASS(dev)->desc);
 
     /* TODO: Maybe use "&error_abort" instead? */
     Error *err = NULL;
 
-    /* Enable the ARM TrustZone extensions. Needed? */
+    /* TODO: Enable the ARM TrustZone extensions. Needed? */
     //object_property_set_bool(OBJECT(&s->cpu), "has_el3", true,  &err);
 
     /* Init CPU object. TODO convert to qdev_init_nofail */
@@ -137,11 +120,13 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
         return;
     }
 
-    qdev_prop_set_int32(DEVICE(&s->smn), "smn-container-base", s->conf->smn_container_base);
+    //TODO: Do we really need to solve this with a prop?
+    qdev_prop_set_int32(DEVICE(&s->smn), "smn-container-base", c->smn_container_base);
     if(!sysbus_realize(SYS_BUS_DEVICE(&s->smn), errp)) {
         return;
     }
 
+    /* TODO: Register x86 address-spaces */
     //object_property_set_uint(OBJECT(&s->x86), "x86-container-base",
     //                        PSP_X86_BASE, &error_abort);
     //sysbus_realize(SYS_BUS_DEVICE(&s->x86), &err);
@@ -155,17 +140,17 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     }
 
     /* Init SRAM */
-    memory_region_init_ram(&s->sram, OBJECT(dev), "sram", s->conf->sram_size,
+    memory_region_init_ram(&s->sram, OBJECT(dev), "sram", c->sram_size,
                            &error_abort);
-    memory_region_add_subregion(get_system_memory(), s->conf->sram_base, &s->sram);
+    memory_region_add_subregion(get_system_memory(), c->sram_base, &s->sram);
 
     /* Init ROM */
-    memory_region_init_rom(&s->rom, OBJECT(dev), "rom", s->conf->rom_size,
+    memory_region_init_rom(&s->rom, OBJECT(dev), "rom", c->rom_size,
                            &error_abort);
-    memory_region_add_subregion(get_system_memory(), s->conf->rom_base, &s->rom);
+    memory_region_add_subregion(get_system_memory(), c->rom_base, &s->rom);
 
     /* Map SMN control registers */
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->smn), 0, s->conf->smn_ctrl_base);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->smn), 0, c->smn_ctrl_base);
 
     /* Map X86 control registers */
     //sysbus_mmio_map(SYS_BUS_DEVICE(&s->x86), 0, PSP_X86_CTRL1_BASE);
@@ -192,7 +177,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
     if(!sysbus_realize(SYS_BUS_DEVICE(&s->sts), errp)) {
         return;
     }
-    sysbus_mmio_map(SYS_BUS_DEVICE(&s->sts), 0, s->conf->sts_base);
+    sysbus_mmio_map(SYS_BUS_DEVICE(&s->sts), 0, c->sts_base);
 
     /* Map CCP */
     if(!sysbus_realize(SYS_BUS_DEVICE(&s->ccp), errp)) {
@@ -217,7 +202,7 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
 
     /* General unimplemented device that maps the whole memory with low priority */
     qdev_prop_set_string(DEVICE(&s->unimp), "name", "unimp");
-    qdev_prop_set_uint64(DEVICE(&s->unimp), "size", s->conf->sram_size);
+    qdev_prop_set_uint64(DEVICE(&s->unimp), "size", c->sram_size);
     if(!sysbus_realize(SYS_BUS_DEVICE(&s->unimp), &error_abort)) {
         return;
     }
@@ -227,8 +212,6 @@ static void amd_psp_realize(DeviceState *dev, Error **errp)
 
 /* User-configurable options with "-global amd-psp.<property>=<value> */
 static Property amd_psp_properties[] = {
-    DEFINE_PROP_UINT32("gen", AmdPspState, gen, ZEN),
-    DEFINE_PROP_STRING("generation", AmdPspState, gen_ident),
     DEFINE_PROP_BOOL("dbg_mode", AmdPspState, dbg_mode, false),
     DEFINE_PROP_END_OF_LIST(),
 };
@@ -237,26 +220,75 @@ static void amd_psp_class_init(ObjectClass *oc, void* data)
 {
     DeviceClass *dc = DEVICE_CLASS(oc);
     device_class_set_props(dc,amd_psp_properties);
-    /* TODO: Add generation to the description */
-    dc->desc = "AMD PSP";
     dc->realize = amd_psp_realize;
     /* Disabling device instantiation with arbitrary machines */
     dc->user_creatable = false;
 }
 
-/* TODO: Use "create_unimplemented_device" to log accesses to unknown mem areas */
+static void amd_psp_zen_class_init(ObjectClass *oc, void *data) {
+    DeviceClass *dc = DEVICE_CLASS(oc);
+    AmdPspClass *pspc = AMD_PSP_CLASS(oc);
 
-static const TypeInfo amd_psp_type_info = {
-    .name = TYPE_AMD_PSP,
-    .parent = TYPE_DEVICE,
-    .instance_size = sizeof(AmdPspState),
-    .instance_init = amd_psp_init,
-    .class_init = amd_psp_class_init,
-};
+    dc->desc = amd_psp_gen_ident[ZEN];
 
-static void amd_psp_register_types(void)
-{
-    type_register_static(&amd_psp_type_info);
+    pspc->sram_size = (256 * 1024);
+    pspc->sram_base = 0x0;
+
+    pspc->rom_size = (64 * 1024);
+    pspc->rom_base = 0xffff0000;
+
+    pspc->smn_ctrl_base = 0x03220000;
+    pspc->smn_container_base = 0x01000000;
+    pspc->sts_base = 0x032000e8;
 }
 
-type_init(amd_psp_register_types);
+static void amd_psp_zen_plus_class_init(ObjectClass *oc, void *data) {
+    DeviceClass *dc = DEVICE_CLASS(oc);
+    /* Zen Plus barely differs from orig Zen. Overwrite differences afterwards */
+    amd_psp_zen_class_init(oc, data);
+    dc->desc = amd_psp_gen_ident[ZEN_PLUS];
+}
+
+static void amd_psp_zen_two_class_init(ObjectClass *oc, void *data) {
+    DeviceClass *dc = DEVICE_CLASS(oc);
+    AmdPspClass *pspc = AMD_PSP_CLASS(oc);
+
+    dc->desc = amd_psp_gen_ident[ZEN2];
+
+    // TODO set/verify values for Zen 2
+    pspc->sram_size = (320 * 1024);
+    pspc->sram_base = 0x0;
+
+    pspc->rom_size = (64 * 1024);
+    pspc->rom_base = 0xffff0000;
+
+    pspc->smn_ctrl_base = 0x03220000;
+    pspc->smn_container_base = 0x01000000;
+    pspc->sts_base = 0x032000d8;
+}
+
+static const TypeInfo amd_psp_types[] = {
+    {
+        .name           = TYPE_AMD_PSP_ZEN,
+        .parent         = TYPE_AMD_PSP,
+        .class_init     = amd_psp_zen_class_init,
+    }, {
+        .name           = TYPE_AMD_PSP_ZEN_PLUS,
+        .parent         = TYPE_AMD_PSP,
+        .class_init     = amd_psp_zen_plus_class_init,
+    }, {
+        .name           = TYPE_AMD_PSP_ZEN_TWO,
+        .parent         = TYPE_AMD_PSP,
+        .class_init     = amd_psp_zen_two_class_init,
+    }, {
+        .name           = TYPE_AMD_PSP,
+        .parent         = TYPE_DEVICE,
+        .instance_size  = sizeof(AmdPspState),
+        .instance_init  = amd_psp_init,
+        .class_size     = sizeof(AmdPspClass),
+        .class_init     = amd_psp_class_init,
+        .abstract       = true,
+    }
+};
+
+DEFINE_TYPES(amd_psp_types)

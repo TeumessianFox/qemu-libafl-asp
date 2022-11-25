@@ -34,6 +34,10 @@
 #define TYPE_AMD_PSP "amd-psp"
 #define AMD_PSP(obj) OBJECT_CHECK(AmdPspState, (obj), TYPE_AMD_PSP)
 
+#define TYPE_AMD_PSP_ZEN "amd-psp-zen_one"
+#define TYPE_AMD_PSP_ZEN_PLUS "amd-psp-zen_plus"
+#define TYPE_AMD_PSP_ZEN_TWO "amd-psp-zen_two"
+
 #define PSP_SMN_CTRL_BASE 0x03220000
 #define PSP_X86_CTRL1_BASE 0x03230000
 #define PSP_X86_CTRL2_BASE 0x032303e0
@@ -98,9 +102,6 @@ typedef struct AmdPspState {
   MemoryRegion sram;
   MemoryRegion rom;
 
-  char * gen_ident;
-  PspGeneration gen;
-  AmdPspConfiguration * conf;
   bool dbg_mode;
   ARMCPU cpu;
 
