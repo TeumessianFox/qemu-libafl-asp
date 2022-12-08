@@ -132,17 +132,17 @@ static void psp_smn_init(Object *obj)
                                    OBJ_PROP_FLAG_READWRITE);
 
     object_initialize_child(obj, "smn_misc", &s->psp_smn_misc,
-                            TYPE_PSP_MISC);
+                            TYPE_PSP_SMN_MISC);
 
     object_initialize_child(obj, "smn_flash", &s->psp_smn_flash,
                             TYPE_PSP_SMN_FLASH);
 
     // TODO here or in realize?
-    object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
-                             0xFFFFFFFF, &error_abort);
+    //object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
+    //                         0xFFFFFFFF, &error_abort);
 
-    object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
-                            "SMN MEM", &error_abort);
+    //object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
+    //                        "SMN MEM", &error_abort);
 
 }
 
@@ -182,11 +182,11 @@ static void psp_smn_realize(DeviceState *dev, Error **errp) {
     PSPSmnFlashState* flash;
     Error *err = NULL;
 
-    object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
-                             0xFFFFFFFF, &error_abort);
+    //object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
+    //                         0xFFFFFFFF, &error_abort);
 
-    object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
-                            "SMN MEM", &error_abort);
+    //object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
+    //                        "SMN MEM", &error_abort);
 
     sysbus_realize(SYS_BUS_DEVICE(&s->psp_smn_misc), &err);
     sysbus_realize(SYS_BUS_DEVICE(&s->psp_smn_flash), &err);

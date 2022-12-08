@@ -34,6 +34,9 @@
 #include "hw/arm/psp-misc.h"
 
 /* TODO make values offset based only starting from mmio base */
+/* TODO needs desperate rework. Rework to different classes or move into
+ * its according file
+ */
 
 /* Look up misc values from the smn memory space
  * @addr The phys address in the smn memory
@@ -62,7 +65,7 @@ static int psp_misc_load_value(hwaddr addr, uint64_t * val)
          * dubbed PSPSTATUS_CCX_SEC_BISI_EN_NOT_SET_IN_FUSE_RAM. */
         *val = BIT(5); break;
 
-    case 0x1025034:
+    case 0x01025034:
         /* Read by the on chip bootloader and acted upon. */
         *val = 0x1e113; break;
 
@@ -157,9 +160,17 @@ static int psp_misc_load_value(hwaddr addr, uint64_t * val)
     case 0x5A870:
         *val = 0x1; break;
 
-    // TODO make dependent on ZEN version
+    // Zen and Zen+
     case 0x0320004c:
         *val = 0xbc090071; break;
+    // Zen2
+    case 0x03200048:
+        *val = 0xbc0b0552; break;
+
+    // TODO this should depend on dbg flag: 
+    // https://github.com/PSPReverse/PSPEmu/blob/78e4be24e882ae67867063c894fbfb2ecbe50f3f/psp-dev-mmio-unknown.c#L67
+    case 0x030101c0:
+        *val = 0x80102; break;
 
     default:
         /* No value found */
@@ -263,7 +274,7 @@ static void psp_misc_realize(DeviceState *dev, Error **errp)
     }
 
     memory_region_init_io(&s->iomem, OBJECT(dev), &misc_mem_ops, s,
-                          s->ident, s->mmio_size);
+                          s->ident, 0x44000000);
 
     sysbus_init_mmio(SYS_BUS_DEVICE(s), &s->iomem);
 

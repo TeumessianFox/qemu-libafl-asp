@@ -21,8 +21,9 @@
 
 #include "hw/sysbus.h"
 #include "exec/memory.h"
-#include "hw/arm/psp-misc.h"
+//#include "hw/arm/psp-misc.h"
 #include "hw/arm/psp-smn-flash.h"
+#include "hw/arm/psp-smn-misc.h"
 
 #define PSP_SMN_CTRL_SIZE 16 * 4
 #define PSP_SMN_SLOT_SIZE 1024 * 1024 /* 1M */
@@ -52,7 +53,8 @@ typedef struct PSPSmnState {
     MemoryRegion psp_smn_space;
 
     /* PSP Misc device that covers the whole SMN address space */
-    PSPMiscState psp_smn_misc;
+    //PSPMiscState psp_smn_misc;
+    PSPSmnMiscState psp_smn_misc;
 
     /* Base address of the smn range. */
     hwaddr psp_smn_base;
