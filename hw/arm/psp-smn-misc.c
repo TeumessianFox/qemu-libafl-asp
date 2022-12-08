@@ -15,6 +15,7 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
 {
     uint64_t val;
     switch(offset) {
+        // PSPEMU verified
         case 0x5a078:
             val = 0x10;
             break;
@@ -35,21 +36,22 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
             val =0x1;
             break;
 
-        // Zen verified
+        // PSPEMU verified
         case 0x1003034:
             val =0x1e112;
             break;
 
-        // Zen verified
+        // PSPEMU verified
         case 0x1004034:
             val =0x1e112;
             break;
 
+        // PSPEMU verified
         case 0x1018034:
-            val =0x1;
+            val =0x1e113;
             break;
 
-        // Zen verified
+        // PSPEMU verified
         case 0x1025034:
             val =0x1e113;
             break;
@@ -105,6 +107,7 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
         case 0x10d8034:
             val =0x1;
             break;
+        case 0x3a0001c:
 
         case 0x18080064:
             val =0x600;
