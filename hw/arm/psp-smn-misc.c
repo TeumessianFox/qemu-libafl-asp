@@ -56,58 +56,68 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
             val =0x1e113;
             break;
 
+        // PSPEMU verified
         case 0x102e034:
-            val =0x1;
+            val =0x1e312;
             break;
 
+        // PSPEMU verified
         case 0x1030034:
-            val =0x1;
+            val =0x1e312;
             break;
 
         case 0x1046034:
-            val =0x1;
+            val = 0x1e103;
             break;
 
         case 0x1047034:
-            val =0x1;
+            val = 0x1e103;
             break;
 
+        // PSPEMU verified
         case 0x106c034:
-            val =0x1;
+            val = 0x1e113;
             break;
 
+        // PSPEMU verified
         case 0x106d034:
-            val =0x1;
+            val = 0x1e113;
             break;
 
+        // PSPEMU verified
         case 0x106e034:
-            val =0x1;
+            val = 0x1e312;
             break;
 
+        // PSPEMU verified
         case 0x1080034:
-            val =0x1;
+            val = 0x1e113;
             break;
 
+        // PSPEMU verified
         case 0x1081034:
-            val =0x1;
+            val = 0x1e113;
             break;
 
+        // PSPEMU verified
         case 0x1096034:
-            val =0x1;
+            val = 0x1e312;
             break;
 
+        // PSPEMU verified
         case 0x1097034:
-            val =0x1;
+            val = 0x1e312;
             break;
 
+        // PSPEMU verified
         case 0x10a8034:
-            val =0x1;
+            val = 0x1e312;
             break;
 
+        // PSPEMU verified
         case 0x10d8034:
-            val =0x1;
+            val = 0x1e312;
             break;
-        case 0x3a0001c:
 
         case 0x18080064:
             val =0x600;
