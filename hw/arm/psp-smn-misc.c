@@ -15,7 +15,7 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
 {
     uint64_t val;
     switch(offset) {
-        // PSPEMU verified
+
         case 0x5a078:
             val = 0x10;
             break;
@@ -28,6 +28,14 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
             val =0x1;
             break;
 
+        case 0x5b304:
+            val = 0xffffffff;
+            break;
+
+        case 0x5bb04:
+            val = 0xffffffff;
+            break;
+
         case 0x5d0cc:
             val =0x20;
             break;
@@ -36,32 +44,26 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
             val =0x1;
             break;
 
-        // PSPEMU verified
         case 0x1003034:
             val =0x1e112;
             break;
 
-        // PSPEMU verified
         case 0x1004034:
             val =0x1e112;
             break;
 
-        // PSPEMU verified
         case 0x1018034:
             val =0x1e113;
             break;
 
-        // PSPEMU verified
         case 0x1025034:
             val =0x1e113;
             break;
 
-        // PSPEMU verified
         case 0x102e034:
             val =0x1e312;
             break;
 
-        // PSPEMU verified
         case 0x1030034:
             val =0x1e312;
             break;
@@ -74,47 +76,38 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
             val = 0x1e103;
             break;
 
-        // PSPEMU verified
         case 0x106c034:
             val = 0x1e113;
             break;
 
-        // PSPEMU verified
         case 0x106d034:
             val = 0x1e113;
             break;
 
-        // PSPEMU verified
         case 0x106e034:
             val = 0x1e312;
             break;
 
-        // PSPEMU verified
         case 0x1080034:
             val = 0x1e113;
             break;
 
-        // PSPEMU verified
         case 0x1081034:
             val = 0x1e113;
             break;
 
-        // PSPEMU verified
         case 0x1096034:
             val = 0x1e312;
             break;
 
-        // PSPEMU verified
         case 0x1097034:
             val = 0x1e312;
             break;
 
-        // PSPEMU verified
         case 0x10a8034:
             val = 0x1e312;
             break;
 
-        // PSPEMU verified
         case 0x10d8034:
             val = 0x1e312;
             break;
@@ -135,7 +128,7 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
     }
 
     qemu_log_mask(LOG_TRACE, "%s: read at offset: 0x%"
-                  HWADDR_PRIx " (size: %d, value: 0x%lu)\n",
+                  HWADDR_PRIx " (size: %d, value: 0x%lx)\n",
                   PSP_SMN_MISC_LOG, offset, size, val);
     return val;
 }
