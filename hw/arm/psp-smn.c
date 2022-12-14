@@ -31,10 +31,43 @@
 #include "qemu/log.h"
 #include "qemu/log-for-trace.h"
 #include "hw/arm/psp-smn.h"
+#include "hw/arm/psp.h"
 
 /* DEFINE_PROP_STRING("rom_path", AmdPspState,flash_rom_path), */
 
 /* PSPSmnCTRL: Controller, attaches SMN devices on demand? */
+
+typedef struct PspSmnClass {
+    /*< private >*/
+    SysBusDeviceClass parent_class;
+    /*< public >*/
+    hwaddr flash;
+} PspSmnClass;
+
+#define PSP_SMN_CLASS(klass) \
+    OBJECT_CLASS_CHECK(PspSmnClass, (klass), TYPE_PSP_SMN)
+#define PSP_SMN_GET_CLASS(obj) \
+    OBJECT_GET_CLASS(PspSmnClass, (obj), TYPE_PSP_SMN)
+
+typedef struct PspSmnConfiguration {
+    const char * desc;
+    hwaddr flash;
+} PspSmnConfiguration;
+
+static PspSmnConfiguration psp_smn_configuration[] = {
+    [ZEN] = {
+        .desc = "psp smn zen",
+        .flash = 0xa000000,
+    },
+    [ZEN_PLUS] = {
+        .desc = "psp smn zen+",
+        .flash = 0xa000000,
+    },
+    [ZEN2] = {
+        .desc = "psp smn zen2",
+        .flash = 0xa000000,
+    },
+};
 
 const char* ident = "SMN Control";
 
@@ -177,16 +210,11 @@ static void psp_smn_init_slots(DeviceState *dev) {
 
 static void psp_smn_realize(DeviceState *dev, Error **errp) {
     PSPSmnState *s = PSP_SMN(dev);
+    PspSmnClass *c = PSP_SMN_GET_CLASS(dev);
     SysBusDevice *sbd = SYS_BUS_DEVICE(dev);
     MemoryRegion *mr_smn_misc;
     PSPSmnFlashState* flash;
     Error *err = NULL;
-
-    //object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
-    //                         0xFFFFFFFF, &error_abort);
-
-    //object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
-    //                        "SMN MEM", &error_abort);
 
     sysbus_realize(SYS_BUS_DEVICE(&s->psp_smn_misc), &err);
     sysbus_realize(SYS_BUS_DEVICE(&s->psp_smn_flash), &err);
@@ -211,7 +239,7 @@ static void psp_smn_realize(DeviceState *dev, Error **errp) {
 
     /* Map the flash region into the SMN address space */
     flash = &s->psp_smn_flash;
-    memory_region_add_subregion_overlap(&s->psp_smn_space, PSP_SMN_FLASH_BASE,
+    memory_region_add_subregion_overlap(&s->psp_smn_space, c->flash,
                                         &flash->psp_smn_flash, 0);
 
     /* Setup the initial SMN to PSP MemoryRegion alias. */
@@ -223,17 +251,51 @@ static void psp_smn_class_init(ObjectClass *oc, void *data) {
     dc->realize = psp_smn_realize;
 }
 
-static const TypeInfo psp_smn_info = {
-    .name = TYPE_PSP_SMN,
-    .parent = TYPE_SYS_BUS_DEVICE,
-    .instance_init = psp_smn_init,
-    .instance_size = sizeof(PSPSmnState),
-    .class_init = psp_smn_class_init,
+static void psp_smn_common_class_init(ObjectClass *oc, enum PspGeneration gen) {
+    DeviceClass *dc = DEVICE_CLASS(oc);
+    PspSmnClass *sc = PSP_SMN_CLASS(oc);
 
+    dc->desc = psp_smn_configuration[gen].desc;
+    sc->flash = psp_smn_configuration[gen].flash;
+}
+
+static void psp_smn_zen_class_init(ObjectClass *oc, void *data) {
+    psp_smn_common_class_init(oc, ZEN);
+}
+
+static void psp_smn_zenplus_class_init(ObjectClass *oc, void *data) {
+    psp_smn_common_class_init(oc, ZEN_PLUS);
+}
+
+static void psp_smn_zentwo_class_init(ObjectClass *oc, void *data) {
+    psp_smn_common_class_init(oc, ZEN2);
+}
+
+static const TypeInfo amd_psp_smn_types[] = {
+    {
+        .name          = TYPE_PSP_SMN_ZEN,
+        .parent        = TYPE_PSP_SMN,
+        .class_init    = psp_smn_zen_class_init,
+    },
+    {
+        .name          = TYPE_PSP_SMN_ZEN_PLUS,
+        .parent        = TYPE_PSP_SMN,
+        .class_init    = psp_smn_zenplus_class_init,
+    },
+    {
+        .name          = TYPE_PSP_SMN_ZEN2,
+        .parent        = TYPE_PSP_SMN,
+        .class_init    = psp_smn_zentwo_class_init,
+    },
+    {
+        .name          = TYPE_PSP_SMN,
+        .parent        = TYPE_SYS_BUS_DEVICE,
+        .instance_init = psp_smn_init,
+        .instance_size = sizeof(PSPSmnState),
+        .class_size    = sizeof(PspSmnClass),
+        .class_init    = psp_smn_class_init,
+        .abstract      = true,
+    }
 };
 
-static void psp_smn_register_types(void) {
-    type_register_static(&psp_smn_info);
-
-}
-type_init(psp_smn_register_types);
+DEFINE_TYPES(amd_psp_smn_types);

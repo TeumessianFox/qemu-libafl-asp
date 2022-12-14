@@ -54,6 +54,8 @@ typedef struct AmdPspClass {
     hwaddr rom_base;
 
     hwaddr sts_base;
+
+    const char * smn_type;
     hwaddr smn_ctrl_base;
     hwaddr smn_container_base;
 } AmdPspClass;
@@ -80,7 +82,7 @@ static void amd_psp_init(Object *obj)
      */
     s->cpu.reset_sctlr = 0x00c52078;
 
-    object_initialize_child(obj, "smn", &s->smn, TYPE_PSP_SMN);
+    object_initialize_child(obj, "smn", &s->smn, TYPE_PSP_SMN_ZEN);
 
     //object_initialize_child(obj, "x86", &s->x86, TYPE_PSP_X86);
 
@@ -237,8 +239,11 @@ static void amd_psp_zen_class_init(ObjectClass *oc, void *data) {
     pspc->rom_size = (64 * 1024);
     pspc->rom_base = 0xffff0000;
 
+    pspc->smn_type = TYPE_PSP_SMN_ZEN;
     pspc->smn_ctrl_base = 0x03220000;
     pspc->smn_container_base = 0x01000000;
+
+
     pspc->sts_base = 0x032000e8;
 }
 
@@ -262,8 +267,10 @@ static void amd_psp_zen_two_class_init(ObjectClass *oc, void *data) {
     pspc->rom_size = (64 * 1024);
     pspc->rom_base = 0xffff0000;
 
+    pspc->smn_type = TYPE_PSP_SMN_ZEN2;
     pspc->smn_ctrl_base = 0x03220000;
     pspc->smn_container_base = 0x01000000;
+
     pspc->sts_base = 0x032000d8;
 }
 
