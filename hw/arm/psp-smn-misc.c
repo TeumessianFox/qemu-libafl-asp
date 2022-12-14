@@ -36,12 +36,25 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
             val = 0xffffffff;
             break;
 
+        case 0x5c14c:
+            val = 0x100;
+            break;
+
+        case 0x5c94c:
+            val = 0x100;
+            break;
+
         case 0x5d0cc:
             val =0x20;
             break;
 
         case 0x5e000:
             val =0x1;
+            break;
+
+        // Zen 2
+        case 0x9025034:
+            val = 0x1e113;
             break;
 
         case 0x1003034:
@@ -117,7 +130,7 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
             break;
 
         case 0x18480064:
-            val =0x600;
+            val = 0x600;
             break;
 
         default:
