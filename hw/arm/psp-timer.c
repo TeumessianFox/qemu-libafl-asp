@@ -29,6 +29,8 @@
 #include "hw/loader.h"
 #include "hw/arm/psp.h"
 #include "qemu/log.h"
+#include "trace-hw_arm.h"
+#include "trace.h"
 #include "hw/arm/psp-timer.h"
 
 static char ident[] = "PSP Timer";
@@ -45,12 +47,15 @@ static uint64_t psp_timer_read(void *opaque, hwaddr offset, unsigned int size) {
         return 0;
     }
 
+    // TODO do this properly instead of counting up
     switch (offset) {
         case 0:
             val = s->psp_timer_control;
+            trace_psp_timer_control_read(offset, val);
             break;
         case 0x20:
             val = s->psp_timer_count;
+            trace_psp_timer_counter_read(val);
             if (s->psp_timer_control & 0x1)
                 s->psp_timer_count++;
             break;
@@ -58,14 +63,9 @@ static uint64_t psp_timer_read(void *opaque, hwaddr offset, unsigned int size) {
             val = 0;
             break;
     }
-    qemu_log_mask(LOG_TRACE,
-                  "%s: Read at 0x%" HWADDR_PRIx ". Returning 0x%lx\n",
-                  ident, phys_base + offset, val);
 
     return val;
 }
-
-
 
 static void psp_timer_write(void *opaque, hwaddr offset, uint64_t val,
                             unsigned int size) {
@@ -83,13 +83,16 @@ static void psp_timer_write(void *opaque, hwaddr offset, uint64_t val,
     switch (offset) {
         case 0x0:
             s->psp_timer_control = val;
+            trace_psp_timer_control_write(offset, val);
             break;
         case 0x1:
             /* XXX For single byte access by the on chip bl... */
             s->psp_timer_control |= val << 8;
+            trace_psp_timer_control_write(offset, val);
             break;
         case 0x20:
             s->psp_timer_count = val;
+            trace_psp_timer_counter_write(val);
             break;
         default:
             qemu_log_mask(LOG_UNIMP, "PSP Timer. Error: Unsupported MMIO accces." \

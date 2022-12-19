@@ -29,41 +29,29 @@
 #include "hw/loader.h"
 #include "hw/arm/psp.h"
 #include "qemu/log.h"
+#include "trace-hw_arm.h"
+#include "trace.h"
 #include "hw/arm/psp-sts.h"
 
 static uint64_t psp_sts_read(void *opaque, hwaddr offset, unsigned int size) {
     PSPStsState *s = PSP_STS(opaque);
-
-    if (size != sizeof(uint32_t)) {
-        qemu_log_mask(LOG_GUEST_ERROR, "PSP STS. Error: Unsupported read size:" \
-                                       "0x%x\n", size);
-        return 0;
-    }
-
+    trace_psp_sts_read(s->psp_sts_val);
     return s->psp_sts_val;
 }
 
 static void psp_sts_write(void *opaque, hwaddr offset,
                        uint64_t value, unsigned int size) {
     PSPStsState *s = PSP_STS(opaque);
-
-    if (size != sizeof(uint32_t)) {
-        qemu_log_mask(LOG_GUEST_ERROR, "PSP STS. Error: Unsupported write size:" \
-                                       "0x%x\n", size);
-        return;
-    }
-
     s->psp_sts_val = value;
-    qemu_log_mask(LOG_TRACE, "PSP STS: 0x%x\n", s->psp_sts_val);
-
+    trace_psp_sts_write(value);
 }
 
 static const MemoryRegionOps sts_mem_ops = {
     .read = psp_sts_read,
     .write = psp_sts_write,
     .endianness = DEVICE_LITTLE_ENDIAN,
-    .impl.min_access_size = 1,
-    .impl.max_access_size = 4,
+    .valid.min_access_size = 4,
+    .valid.max_access_size = 4,
 };
 
 static void psp_sts_init(Object *obj) {

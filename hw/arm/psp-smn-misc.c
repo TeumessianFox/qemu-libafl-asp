@@ -1,14 +1,13 @@
 #include "qemu/osdep.h"
 #include "qemu/module.h"
-#include "qemu/log.h"
 #include "qapi/error.h"
+#include "trace-hw_arm.h"
+#include "trace.h"
 
 #include "hw/arm/psp-smn-misc.h"
+#include <stdint.h>
 
 #define PSP_SMN_MISC_LOG "[PSP SMN MISC]"
-
-/* TODO make this class dependant */
-#define PSP_SMN_MMIO_SIZE 0x44000000
 
 static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
                            unsigned int size)
@@ -21,7 +20,11 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
             break;
 
         case 0x5a088:
-            val =0x1;
+            val = 0x1;
+            break;
+
+        case 0x5a304:
+            val = 0x1;
             break;
 
         case 0x5a870:
@@ -36,17 +39,24 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
             val = 0xffffffff;
             break;
 
+        // Zen 2
         case 0x5c14c:
             val = 0x100;
             break;
 
+        // Zen 2
         case 0x5c94c:
             val = 0x100;
             break;
 
         case 0x5d0cc:
-            val =0x20;
+            val = 0x20;
             break;
+
+        // Zen 2
+        //case 0x5d154:
+        //    val = 0x300;
+        //    break;
 
         case 0x5e000:
             val =0x1;
@@ -134,24 +144,18 @@ static uint64_t psp_smn_misc_read(void *opaque, hwaddr offset,
             break;
 
         default:
-            qemu_log_mask(LOG_TRACE, "%s: unimplemented device read at offset: 0x%"
-                  HWADDR_PRIx " (size: %d, value: TODO)\n",
-                  PSP_SMN_MISC_LOG, offset, size);
+            trace_psp_smn_misc_read_unimplemented(offset);
             return 0;
     }
 
-    qemu_log_mask(LOG_TRACE, "%s: read at offset: 0x%"
-                  HWADDR_PRIx " (size: %d, value: 0x%lx)\n",
-                  PSP_SMN_MISC_LOG, offset, size, val);
+    trace_psp_smn_misc_read(offset, val);
     return val;
 }
 
 static void psp_smn_misc_write(void *opaque, hwaddr offset, uint64_t value,
                            unsigned int size)
 {
-    qemu_log_mask(LOG_TRACE, "%s: unimplemented device write at offset: 0x%"
-                  HWADDR_PRIx " (size: %d, value: 0x%lx)\n",
-                  PSP_SMN_MISC_LOG, offset, size, value);
+    trace_psp_smn_misc_write_unimplemented(offset, value);
 }
 
 static const MemoryRegionOps misc_mem_ops = {
@@ -166,9 +170,8 @@ static void psp_misc_realize(DeviceState *dev, Error **errp) {
     PSPSmnMiscState * s = PSP_SMN_MISC(dev);
 
     /* Init mmio */
-    /* TODO make size class based. Or over full range with lower prio */
     memory_region_init_io(&s->iomem, OBJECT(dev), &misc_mem_ops, s,
-                          "psp-smn-misc", PSP_SMN_MMIO_SIZE);
+                          "psp-smn-misc", UINT32_MAX);
     sysbus_init_mmio(SYS_BUS_DEVICE(dev), &s->iomem);
 }
 

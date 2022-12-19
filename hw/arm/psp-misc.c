@@ -32,6 +32,7 @@
 #include "hw/arm/psp.h"
 #include "qemu/log.h"
 #include "hw/arm/psp-misc.h"
+#include "trace-hw_arm.h"
 
 /* TODO make values offset based only starting from mmio base */
 /* TODO needs desperate rework. Rework to different classes or move into
@@ -197,17 +198,15 @@ static char *psp_misc_get_identifier(Object *obj, Error **errp)
 static void psp_misc_write(void *opaque, hwaddr offset, uint64_t value,
                            unsigned int size)
 {
-    PSPMiscState *misc = PSP_MISC(opaque);
-    hwaddr phys_base = misc->iomem.addr;
-    hwaddr phys_abs;
+    //PSPMiscState *misc = PSP_MISC(opaque);
+    //hwaddr phys_base = misc->iomem.addr;
+    //hwaddr phys_abs;
+    //phys_abs = phys_base + offset;
 
     /* TODO: Allow write to specific registers */
 
-    phys_abs = phys_base + offset;
 
-    qemu_log_mask(LOG_UNIMP, "%s: unimplemented device write at: 0x%"
-                  HWADDR_PRIx " (size: %d, value: 0x%lx)\n",
-                  misc->ident, phys_abs, size, value);
+    trace_psp_misc_write_unimplemented(offset, value, size);
 }
 
 static uint64_t psp_misc_read(void *opaque, hwaddr offset, unsigned int size)
@@ -223,13 +222,9 @@ static uint64_t psp_misc_read(void *opaque, hwaddr offset, unsigned int size)
     value = 0;
 
     if(psp_misc_load_value(phys_abs, &value)) {
-        qemu_log_mask(LOG_UNIMP, "%s: unimplemented read at:  0x%"
-                      HWADDR_PRIX " (size: %d, value: 0x%lx)\n",
-                      misc->ident, phys_abs, size, value);
+        trace_psp_misc_read_unimplemented(offset, size);
     } else {
-        qemu_log_mask(LOG_TRACE, "%s: [misc] read at: 0x%"
-                      HWADDR_PRIX " (size: %d, value: 0x%lx)\n",
-                      misc->ident, phys_abs, size, value);
+        trace_psp_misc_read(offset, value, size);
     }
 
     return value;

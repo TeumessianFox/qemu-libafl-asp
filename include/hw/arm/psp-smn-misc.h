@@ -18,7 +18,7 @@
 
 #include "hw/sysbus.h"
 
-#define TYPE_PSP_SMN_MISC "psp_smn_misc"
+#define TYPE_PSP_SMN_MISC "amd_psp.smn.misc"
 #define PSP_SMN_MISC(obj) OBJECT_CHECK(PSPSmnMiscState, (obj), TYPE_PSP_SMN_MISC)
 
 typedef struct PSPSmnMiscState {

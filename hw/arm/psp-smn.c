@@ -30,6 +30,8 @@
 #include "hw/arm/psp.h"
 #include "qemu/log.h"
 #include "qemu/log-for-trace.h"
+#include "trace-hw_arm.h"
+#include "trace.h"
 #include "hw/arm/psp-smn.h"
 #include "hw/arm/psp.h"
 
@@ -57,32 +59,25 @@ typedef struct PspSmnConfiguration {
 static PspSmnConfiguration psp_smn_configuration[] = {
     [ZEN] = {
         .desc = "psp smn zen",
-        .flash = 0xa000000,
+        .flash = 0x0a000000,
     },
     [ZEN_PLUS] = {
         .desc = "psp smn zen+",
-        .flash = 0xa000000,
+        .flash = 0x0a000000,
     },
     [ZEN2] = {
         .desc = "psp smn zen2",
-        .flash = 0xa000000,
+        .flash = 0x44000000,
     },
 };
 
 const char* ident = "SMN Control";
 
 static void psp_smn_update_slot(PSPSmnState *smn, uint32_t idx) {
-    char name[PSP_SMN_SLOT_NAME_LEN] = { 0 };
-
     PSPSmnAddr addr = smn->psp_smn_slots[idx];
-
-    snprintf(name, PSP_SMN_SLOT_NAME_LEN, "%s%d", PSP_SMN_SLOT_NAME, idx);
-
     /* TODO documentation */
     memory_region_set_alias_offset(&smn->psp_smn_containers[idx], addr);
-
-    qemu_log_mask(LOG_TRACE, "%s: SMN mapped 0x%x to SMN slot %d\n",ident, addr,
-                  idx);
+    trace_psp_smn_update_slot(idx, addr);
 
 }
 
@@ -92,9 +87,8 @@ static void psp_smn_write(void *opaque, hwaddr offset, uint64_t value,
     uint32_t idx;
     hwaddr phys_base = smn->psp_smn_control.addr;
 
-    qemu_log_mask(LOG_TRACE, "%s: SMN write at 0x%" HWADDR_PRIx
-        " (size %d, raw val 0x%lx)\n",
-        ident, phys_base + offset, size, value);
+    trace_psp_smn_write(offset, phys_base, value, size);
+
     switch (size) {
         case 4:
             idx = (offset / 4) * 2;
@@ -140,9 +134,7 @@ static uint64_t psp_smn_read(void *opaque, hwaddr offset, unsigned int size) {
             break;
 
     }
-    qemu_log_mask(LOG_TRACE, "%s: SMN read at 0x%" HWADDR_PRIx
-        " (size %d, raw val 0x%x)\n",
-        ident, phys_base + offset, size, val);
+    trace_psp_smn_read(offset, phys_base, val, size);
     return val;
 }
 
