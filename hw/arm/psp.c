@@ -72,6 +72,7 @@ static void amd_psp_init(Object *obj)
 {
 
     AmdPspState *s = AMD_PSP(obj);
+    AmdPspClass *c = AMD_PSP_GET_CLASS(obj);
 
     object_initialize_child(obj, "cpu", &s->cpu,
                             ARM_CPU_TYPE_NAME("cortex-a9"));
@@ -82,7 +83,7 @@ static void amd_psp_init(Object *obj)
      */
     s->cpu.reset_sctlr = 0x00c52078;
 
-    object_initialize_child(obj, "smn", &s->smn, TYPE_PSP_SMN_ZEN);
+    object_initialize_child(obj, "smn", &s->smn, c->smn_type);
 
     //object_initialize_child(obj, "x86", &s->x86, TYPE_PSP_X86);
 
