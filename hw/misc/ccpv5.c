@@ -34,6 +34,8 @@
 #include "hw/misc/ccpv5.h"
 #include "hw/misc/ccpv5-linux.h"
 #include "hw/misc/ccpv5-nettle.h"
+#include "trace-hw_misc.h"
+#include "trace.h"
 #include "hw/arm/psp.h"
 #include "crypto/hash.h"
 /* TODO: Restrict access to specific MemoryRegions only.
@@ -110,23 +112,19 @@ static uint32_t ccp_queue_read(CcpV5State *s, hwaddr offset, uint32_t id) {
     switch(offset) {
         case CCP_Q_CTRL_OFFSET:
             ret = qs->ccp_q_control;
-            qemu_log_mask(LOG_TRACE,
-                          "CCP: queue %d ctrl read (val = 0x%x)\n", id, ret);
+            trace_ccp_queue_ctrl_read(id, ret);
             break;
         case CCP_Q_TAIL_LO_OFFSET:
             ret = qs->ccp_q_tail;
-            qemu_log_mask(LOG_TRACE,
-                          "CCP: queue %d tail read (val = 0x%x)\n", id, ret);
+            trace_ccp_queue_tail_lo_read(id, ret);
             break;
         case CCP_Q_HEAD_LO_OFFSET:
             ret = qs->ccp_q_head;
-            qemu_log_mask(LOG_TRACE,
-                          "CCP: queue %d head read (val = 0x%x)\n", id, ret);
+            trace_ccp_queue_head_lo_read(id, ret);
             break;
         case CCP_Q_STATUS_OFFSET:
             ret = qs->ccp_q_status;
-            qemu_log_mask(LOG_TRACE,
-                          "CCP: queue %d status read (val = 0x%x)\n", id, ret);
+            trace_ccp_queue_status_read(id, ret);
             break;
         default:
             qemu_log_mask(LOG_UNIMP, "CCP: CCP queue read at unknown " \
@@ -208,13 +206,10 @@ static void ccp_in_guest_pt(CcpV5State *s, uint32_t id, hwaddr dst, hwaddr src,
         sclean = true;
     }
 
-    qemu_log_mask(LOG_TRACE, "CCP: Performing passthrough. Copying 0x%x " \
-                  "bytes from 0x%" HWADDR_PRIx " to 0x%" HWADDR_PRIx "\n",
-                  len, src, dst);
 
     /* "plen" might have been shortened to the range of memory actually available */
     if (plen < len) {
-        qemu_log_mask(LOG_TRACE, "CCP: Only copying 0x%x bytes!\n", (uint32_t) plen);
+        qemu_log_mask(LOG_GUEST_ERROR, "CCP: Only copying 0x%x bytes!\n", (uint32_t) plen);
     }
     ccp_memcpy(hdst, hsrc, plen, bwise, bswap);
 
@@ -246,6 +241,7 @@ static void ccp_passthrough(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
     bwise = func.pt.bitwise;
     bswap = func.pt.byteswap;
 
+    trace_ccp_passthrough(src, dst, cbytes);
     ccp_in_guest_pt(s, id, dst, src, cbytes, dst_type, src_type, bwise, bswap);
 }
 
@@ -255,7 +251,6 @@ static void ccp_perform_sha_256(CcpV5State *s, hwaddr src, uint32_t len, bool eo
     void* hsrc;
     hwaddr plen;
     plen = len;
-    qemu_log_mask(LOG_TRACE, "CCP SHA256: in perf: len = 0x%x\n",len);
 
     if (s->sha_ctx.raw == NULL) {
         /* Init new SHA256 context */
@@ -287,10 +282,6 @@ static void ccp_perform_sha_256(CcpV5State *s, hwaddr src, uint32_t len, bool eo
         qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: SHA context not initialized\n");
         return;
     }
-
-
-
-
 }
 
 static bool ccp_zlib(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
@@ -317,10 +308,8 @@ static bool ccp_zlib(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
     init = CCP5_CMD_INIT(desc);
     eom = CCP5_CMD_EOM(desc);
 
-    qemu_log_mask(LOG_TRACE, "CCP ZLIB: src 0x%" HWADDR_PRIx " len" \
-                  " 0x%x dst 0x%" HWADDR_PRIx " src_type 0x%x dst_type 0x%x" \
-                  " init %d eom %d\n", src, len, dst, src_type, dst_type, 
-                  init, eom);
+
+    trace_ccp_zlib(src, dst, len, src_type, dst_type, init, eom);
 
     if (!init || !eom) {
         qemu_log_mask(LOG_UNIMP, "CCP Error: Only EOM=1 and INIT=1 Zlib ops are currently supported\n");
@@ -384,9 +373,7 @@ static void ccp_sha(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
 
     switch (func.sha.type) {
         case CCP_SHA_TYPE_256:
-            qemu_log_mask(LOG_TRACE, "CCP SHA256: src 0x%" HWADDR_PRIx " len" \
-                          " 0x%x sha_len 0x%lx init 0x%d eom 0x%d ctx_id %d\n",
-                          src, len, sha_len, init, eom, ctx_id);
+            trace_ccp_sha(src, len, sha_len, init, eom, ctx_id);
             ccp_perform_sha_256(s, src, len, eom, init, ctx);
 
             break;
@@ -492,10 +479,8 @@ static void ccp_rsa(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
     rsa_src = CCP5_CMD_SRC_LO(desc) | ((hwaddr)(CCP5_CMD_SRC_HI(desc)) << 32);
     rsa_dst = CCP5_CMD_DST_LO(desc) | ((hwaddr)(CCP5_CMD_DST_HI(desc)) << 32);
 
+    trace_ccp_rsa(desc->src_lo, len, rsa_dst, rsa_dst_mtype, rsa_mode, rsa_size, eom, init);
 
-    qemu_log_mask(LOG_TRACE, "CCP RSA: src 0x%x len 0x%x dst" \
-                  " 0x%lx dst_type 0x%d rsa_mode 0x%x rsa_size 0x%x eom 0x%d init %d\n",
-                  desc->src_lo, len, rsa_dst, rsa_dst_mtype, rsa_mode, rsa_size, eom, init);
     if (rsa_mode == 0 && ( rsa_size == 256 && len == 512)) {
 
         /* TODO consistent naming */
@@ -576,9 +561,7 @@ static void ccp_process_q(CcpV5State *s, uint32_t id) {
     /* TODO: This operation needs to be delayed! */
 
     qs = &s->q_states[id];
-    qemu_log_mask(LOG_TRACE,
-                  "CCP: queue %d start cmd tail 0x%x head 0x%x\n",
-                  qs->ccp_q_id, qs->ccp_q_tail, qs->ccp_q_head);
+    trace_ccp_process_queue(qs->ccp_q_id, qs->ccp_q_tail, qs->ccp_q_head);
 
     /* Clear HALT bit */
     /* Clear RUN bit. TODO: The secure OS never re-sets the RUN bit. We need
@@ -612,6 +595,7 @@ static void ccp_queue_write(CcpV5State *s, hwaddr offset, uint32_t val,
     CcpV5QState *qs = &s->q_states[id];
     switch(offset) {
         case CCP_Q_CTRL_OFFSET:
+            trace_ccp_queue_ctrl_write(id, val);
             qs->ccp_q_control = val;
             /*TODO: Is this the correct place to start processing the queue? Or should
              * we only start the queue on head/tail writes? */
@@ -624,23 +608,18 @@ static void ccp_queue_write(CcpV5State *s, hwaddr offset, uint32_t val,
                     qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: Can't program timer. A CCP request is already pending.\n");
                 }
             }
-            qemu_log_mask(LOG_TRACE,
-                          "CCP: queue %d ctrl write (val = 0x%x)\n", id, val);
             break;
         case CCP_Q_TAIL_LO_OFFSET:
             qs->ccp_q_tail = val;
-            qemu_log_mask(LOG_TRACE,
-                          "CCP: queue %d tail write (val = 0x%x)\n", id, val);
+            trace_ccp_queue_tail_lo_write(id, val);
             break;
         case CCP_Q_HEAD_LO_OFFSET:
             qs->ccp_q_head = val;
-            qemu_log_mask(LOG_TRACE,
-                          "CCP: queue %d head write (val = 0x%x)\n", id, val);
+            trace_ccp_queue_head_lo_write(id, val);
             break;
         case CCP_Q_STATUS_OFFSET:
             qs->ccp_q_status = val;
-            qemu_log_mask(LOG_TRACE,
-                          "CCP: queue %d status write (val = 0x%x)\n", id, val);
+            trace_ccp_queue_status_write(id, val);
             break;
         default:
             qemu_log_mask(LOG_UNIMP, "CCP: CCP queue write at unknown " \
@@ -661,11 +640,10 @@ static uint32_t ccp_ctrl_read(CcpV5State *s, hwaddr offset) {
             /* Ignored for now */
             break;
         default:
-            qemu_log_mask(LOG_TRACE, "CCP: Global ctrl write at offset " \
-                                     "0x%" HWADDR_PRIx "\n", offset);
             break;
     }
 
+    trace_ccp_queue_ctrl_read(offset, 0);
     return 0;
 }
 
@@ -681,39 +659,32 @@ static void ccp_ctrl_write(CcpV5State *s, hwaddr offset,
             /* Ignored for now */
             break;
         default:
-            qemu_log_mask(LOG_TRACE, "CCP: Global ctrl write at offset " \
-                                     "0x%" HWADDR_PRIx " , value 0x%x\n", offset,
-                                     value);
             break;
     }
 
+    trace_ccp_ctrl_write(offset, value);
     return;
 }
 
 static uint32_t ccp_config_read(CcpV5State *s, hwaddr offset) {
     (void)s;
 
-    qemu_log_mask(LOG_TRACE, "CCP: CCP config read at offset " \
-                             "0x%" HWADDR_PRIx "\n", offset);
-
+    uint32_t val = 0;
     switch (offset) {
         case 0x38:
             /* The on chip bootloader waits for bit 0 to go 1. */
-            return 1;
-            break;
-        default:
-            return 0;
+            val = 1;
             break;
     }
+
+    trace_ccp_config_read(offset, val);
+    return val;
 }
 
 static void ccp_config_write(CcpV5State *s, hwaddr offset,
                                     uint32_t value) {
     (void)s;
-    qemu_log_mask(LOG_TRACE, "CCP: CCP config write at offset " \
-                             "0x%" HWADDR_PRIx " , value 0x%x\n", offset,
-                             value);
-
+    trace_ccp_config_write(offset, value);
     return;
 }
 
