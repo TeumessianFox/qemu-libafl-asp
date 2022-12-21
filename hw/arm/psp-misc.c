@@ -164,6 +164,7 @@ static int psp_misc_load_value(hwaddr addr, uint64_t * val)
     // Zen and Zen+
     case 0x0320004c:
         *val = 0xbc090071; break;
+
     // Zen2
     case 0x03200048:
         *val = 0xbc0b0552; break;
@@ -172,6 +173,7 @@ static int psp_misc_load_value(hwaddr addr, uint64_t * val)
     // https://github.com/PSPReverse/PSPEmu/blob/78e4be24e882ae67867063c894fbfb2ecbe50f3f/psp-dev-mmio-unknown.c#L67
     case 0x030101c0:
         *val = 0x80102; break;
+
 
     default:
         /* No value found */

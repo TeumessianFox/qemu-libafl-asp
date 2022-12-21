@@ -31,9 +31,6 @@
 #define PSP_SMN_SLOT_NAME_LEN  20
 #define PSP_SMN_SLOT_NAME "smn-slot_"
 
-/* Flash base address for Zen1 */
-#define PSP_SMN_FLASH_BASE 0xa000000
-
 #define TYPE_PSP_SMN "amd_psp.smn"
 #define TYPE_PSP_SMN_ZEN "amd_psp.smn.zen"
 #define TYPE_PSP_SMN_ZEN_PLUS "amd_psp.smn.zen+"

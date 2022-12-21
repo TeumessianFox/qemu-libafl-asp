@@ -103,9 +103,8 @@ static void psp_smn_write(void *opaque, hwaddr offset, uint64_t value,
             psp_smn_update_slot(smn, idx);
             break;
         default:
-            /* TODO Fix line breaks */
             qemu_log_mask(LOG_UNIMP,
-                          "%s: SMN ERROR. Unsupported write access size: %d\n",
+                          "%s: SMN ERROR. Unsupported write access size: %d",
                           ident, size);
             break;
     }
@@ -161,14 +160,6 @@ static void psp_smn_init(Object *obj)
 
     object_initialize_child(obj, "smn_flash", &s->psp_smn_flash,
                             TYPE_PSP_SMN_FLASH);
-
-    // TODO here or in realize?
-    //object_property_set_uint(OBJECT(&s->psp_smn_misc),"psp_misc_msize",
-    //                         0xFFFFFFFF, &error_abort);
-
-    //object_property_set_str(OBJECT(&s->psp_smn_misc),"psp_misc_ident",
-    //                        "SMN MEM", &error_abort);
-
 }
 
 static void psp_smn_init_slots(DeviceState *dev) {

@@ -69,6 +69,9 @@ psp_misc_write(uint64_t off, uint64_t value, unsigned int size) "offset=0x%"PRIx
 psp_misc_read_unimplemented(uint64_t off, unsigned int size) "offset=0x%"PRIx64" value=0x0 (default) size=0x%x"
 psp_misc_write_unimplemented(uint64_t off, uint64_t value, unsigned int size) "offset=0x%"PRIx64" value=0x%"PRIx64" size=0x%x"
 
+# psp-fuse.c
+psp_fuse_read(uint64_t off, uint64_t value, unsigned int size) "offset=0x%"PRIx64" value=0x%"PRIx64" size=0x%x" 
+
 # psp-smn.c
 psp_smn_read(uint64_t off, uint64_t phys, uint64_t value, uint64_t size) "offset=0x%"PRIx64" phys=0x%"PRIx64" value=0x%"PRIx64" size=0x%"PRIx64
 psp_smn_write(uint64_t off, uint64_t phys, uint64_t value, uint64_t size) "offset=0x%"PRIx64" phys=0x%"PRIx64" value=0x%"PRIx64" size=0x%"PRIx64

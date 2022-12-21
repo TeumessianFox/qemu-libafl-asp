@@ -12,6 +12,7 @@
 #include "hw/sysbus.h"
 #include "hw/qdev-properties.h"
 #include "hw/arm/psp-fuse.h"
+#include "trace.h"
 
 static uint64_t psp_fuse_read(void *opaque, hwaddr offset, unsigned int size) {
     PSPFuseState * fuse = PSP_FUSE(opaque);
@@ -25,6 +26,7 @@ static uint64_t psp_fuse_read(void *opaque, hwaddr offset, unsigned int size) {
                       __func__, offset);
         break;
     }
+    trace_psp_fuse_read(offset, r, size);
     return r;
 }
 
