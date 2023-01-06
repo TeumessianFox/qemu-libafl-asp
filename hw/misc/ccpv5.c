@@ -44,18 +44,18 @@
 /* TODO Document*/
 static void ccp_process_q(CcpV5State *s, uint32_t id);
 
-static void ccp_timer_cb(void *opaque)
-{
-    CcpV5State *s = CCP_V5(opaque);
-
-    if (s->dma_timer_qid != -1) {
-        ccp_process_q(s, s->dma_timer_qid);
-        s->dma_timer_qid = -1;
-    } else {
-        qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: Timer fired, but no queue ID set\n");
-
-    }
-}
+//static void ccp_timer_cb(void *opaque)
+//{
+//    CcpV5State *s = CCP_V5(opaque);
+//
+//    if (s->dma_timer_qid != -1) {
+//        ccp_process_q(s, s->dma_timer_qid);
+//        s->dma_timer_qid = -1;
+//    } else {
+//        qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: Timer fired, but no queue ID set\n");
+//
+//    }
+//}
 
 static void ccp_reverse_buf(uint8_t *buf, size_t len) {
     uint8_t tmp;
@@ -111,6 +111,9 @@ static uint32_t ccp_queue_read(CcpV5State *s, hwaddr offset, uint32_t id) {
     qs = &s->q_states[id];
     switch(offset) {
         case CCP_Q_CTRL_OFFSET:
+            if(qs->ccp_q_control & CCP_Q_RUN) {
+                ccp_process_q(s,id);
+            }
             ret = qs->ccp_q_control;
             trace_ccp_queue_ctrl_read(id, ret);
             break;
@@ -284,6 +287,45 @@ static void ccp_perform_sha_256(CcpV5State *s, hwaddr src, uint32_t len, bool eo
     }
 }
 
+static void ccp_perform_sha_384(CcpV5State *s, hwaddr src, uint32_t len, bool eom, bool init, uint8_t* lsb_ctx) {
+    /* TODO: use nettle. See: https://www.gnutls.org/manual/html_node/Using-GnuTLS-as-a-cryptographic-library.html#Using-GnuTLS-as-a-cryptographic-library */
+    /* Use "init" to determine whether we need to initialize a new sha context */
+    void* hsrc;
+    hwaddr plen;
+    plen = len;
+
+    if (s->sha_ctx.raw == NULL) {
+        /* Init new SHA384 context */
+        ccp_init_sha384_ctx(&s->sha_ctx);
+    }
+    if(s->sha_ctx.raw != NULL) {
+        hsrc = cpu_physical_memory_map(src, &plen, false);
+        if (plen != len) {
+            qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: Couldn't map guest memory\n");
+            return;
+        }
+        if (hsrc != NULL) {
+            ccp_update_sha384(&s->sha_ctx, len, hsrc);
+        } else {
+            qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: Couldn't map guest memory\n");
+            return;
+        }
+        if (eom) {
+            ccp_digest_sha384(&s->sha_ctx, lsb_ctx);
+            /* The CCP seems to store the digest in reversed order -> Do as the
+             * CCP would do, even if it means we reverse it again when the 
+             * digest is copied from the lsb to the PSP.
+             */
+            ccp_reverse_buf(lsb_ctx, 48); // 48 -> SHA384 digest size 
+            cpu_physical_memory_unmap(hsrc, plen, false, 0);
+        }
+
+    } else {
+        qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: SHA context not initialized\n");
+        return;
+    }
+}
+
 static bool ccp_zlib(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
     bool init;
     bool eom;
@@ -377,6 +419,11 @@ static void ccp_sha(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
             ccp_perform_sha_256(s, src, len, eom, init, ctx);
 
             break;
+        case CCP_SHA_TYPE_384:
+            trace_ccp_sha(src, len, sha_len, init, eom, ctx_id);
+            ccp_perform_sha_384(s, src, len, eom, init, ctx);
+
+            break;
         default:
             qemu_log_mask(LOG_UNIMP, "CCP Error. Unimplemented SHA type %d\n", 
                           func.sha.type);
@@ -458,10 +505,10 @@ static void ccp_rsa(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
     hwaddr rsa_dst;
     CcpV5RsaPubKey rsa_pubkey;
 
-    uint8_t rsa_exp[256]; /* Only 2048 for now */
-    uint8_t rsa_mod[256]; /* Only 2048 for now */
-    uint8_t rsa_msg[256];           /* Assuming it is a signature with length equal to the modulus */
-    uint8_t rsa_result[256];
+    uint8_t rsa_exp[512]; /* Only 2048 & 4096 for now */
+    uint8_t rsa_mod[512]; /* Only 2048 & 4096 for now */
+    uint8_t rsa_msg[512];           /* Assuming it is a signature with length equal to the modulus */
+    uint8_t rsa_result[512];
 
 
 
@@ -481,7 +528,8 @@ static void ccp_rsa(CcpV5State *s, uint32_t id, ccp5_desc *desc) {
 
     trace_ccp_rsa(desc->src_lo, len, rsa_dst, rsa_dst_mtype, rsa_mode, rsa_size, eom, init);
 
-    if (rsa_mode == 0 && ( rsa_size == 256 && len == 512)) {
+    if (rsa_mode == 0 && 
+            ( (rsa_size == 256 && len == 512) || (rsa_size == 512 && len == 1024)) ) {
 
         /* TODO consistent naming */
         rsa_pubkey.rsa_len = rsa_size;
@@ -599,15 +647,15 @@ static void ccp_queue_write(CcpV5State *s, hwaddr offset, uint32_t val,
             qs->ccp_q_control = val;
             /*TODO: Is this the correct place to start processing the queue? Or should
              * we only start the queue on head/tail writes? */
-            if (qs->ccp_q_control & CCP_Q_RUN) {
-                /* Process the request in 100ns from now */
-                if (s->dma_timer_qid == -1) {
-                    s->dma_timer_qid = id;
-                    timer_mod(&s->dma_timer, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) + 100);
-                } else {
-                    qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: Can't program timer. A CCP request is already pending.\n");
-                }
-            }
+            //if (qs->ccp_q_control & CCP_Q_RUN) {
+            //    /* Process the request in 100ns from now */
+            //    if (s->dma_timer_qid == -1) {
+            //        s->dma_timer_qid = id;
+            //        timer_mod(&s->dma_timer, qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) + 100);
+            //    } else {
+            //        qemu_log_mask(LOG_GUEST_ERROR, "CCP Error: Can't program timer. A CCP request is already pending.\n");
+            //    }
+            //}
             break;
         case CCP_Q_TAIL_LO_OFFSET:
             qs->ccp_q_tail = val;
@@ -775,8 +823,8 @@ static void ccp_init(Object *obj) {
     CcpV5State *s = CCP_V5(obj);
     SysBusDevice *sbd = SYS_BUS_DEVICE(obj);
 
-    timer_init_ns(&s->dma_timer, QEMU_CLOCK_VIRTUAL, ccp_timer_cb, s);
-    s->dma_timer_qid = -1;
+    //timer_init_ns(&s->dma_timer, QEMU_CLOCK_VIRTUAL, ccp_timer_cb, s);
+    //s->dma_timer_qid = -1;
 
     memory_region_init_io(&s->iomem, obj, &ccp_mem_ops, s,
             TYPE_CCP_V5, CCP_MMIO_SIZE);

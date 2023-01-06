@@ -54,15 +54,19 @@ static inline void ccp_init_sha256_ctx(CcpV5ShaCtx *ctx) {
     }
 }
 
-/* static void ccp_init_sha384_ctx(CcpV5ShaCtx *ctx) { */
-/*     if(ctx != NULL) { */
-/*         ctx->ctx_384 = (struct sha384_ctx*)g_malloc(sizeof(struct sha384_ctx)); */
-/*         nettle_sha384_init(ctx->ctx_384); */
-/*     } */
-/* } */
+static inline void ccp_init_sha384_ctx(CcpV5ShaCtx *ctx) {
+    if(ctx != NULL) {
+        ctx->ctx_384 = (struct sha384_ctx*)g_malloc(sizeof(struct sha384_ctx));
+        nettle_sha384_init(ctx->ctx_384);
+    }
+}
 
 static inline void ccp_update_sha256(CcpV5ShaCtx *ctx, uint32_t len, void *src) {
     nettle_sha256_update(ctx->ctx_256, len, src);
+}
+
+static inline void ccp_update_sha384(CcpV5ShaCtx *ctx, uint32_t len, void *src) {
+    sha384_update(ctx->ctx_384, len, src);
 }
 
 static inline void ccp_clear_sha_ctx(CcpV5ShaCtx *ctx) {
@@ -77,6 +81,10 @@ static inline void ccp_digest_sha256(CcpV5ShaCtx *ctx, uint8_t* lsb_ctx) {
     ccp_clear_sha_ctx(ctx);
 }
 
+static inline void ccp_digest_sha384(CcpV5ShaCtx *ctx, uint8_t* lsb_ctx) {
+    nettle_sha384_digest(ctx->ctx_384, SHA384_DIGEST_SIZE, lsb_ctx);
+    ccp_clear_sha_ctx(ctx);
+}
 static inline void ccp_rsa_init_key(CcpV5RsaPubKey *key, uint8_t *m, uint8_t *e) {
 
     mpz_init(key->exp);
