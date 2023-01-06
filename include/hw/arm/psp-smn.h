@@ -35,6 +35,7 @@
 #define TYPE_PSP_SMN_ZEN "amd_psp.smn.zen"
 #define TYPE_PSP_SMN_ZEN_PLUS "amd_psp.smn.zen+"
 #define TYPE_PSP_SMN_ZEN2 "amd_psp.smn.zen2"
+#define TYPE_PSP_SMN_ZEN3 "amd_psp.smn.zen3"
 #define PSP_SMN(obj) OBJECT_CHECK(PSPSmnState, (obj), TYPE_PSP_SMN)
 
 
