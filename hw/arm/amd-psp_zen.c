@@ -52,6 +52,7 @@ static const char * soc_versions[] = {
     [ZEN_PLUS] = TYPE_AMD_PSP_ZEN_PLUS,
     [ZEN2]     = TYPE_AMD_PSP_ZEN_TWO,
     [ZEN3]     = TYPE_AMD_PSP_ZEN_THREE,
+    [ZENTESLA] = TYPE_AMD_PSP_ZEN_TESLA,
 };
 
 #define TYPE_AMD_PSP_MACHINE MACHINE_TYPE_NAME("amd-psp-common")
@@ -120,6 +121,13 @@ static void psp_zen_three_machine_init(ObjectClass *oc, void *data) {
     psp_zen_machine_common_init(mc);
 }
 
+static void psp_zen_tesla_machine_init(ObjectClass *oc, void *data) {
+    MachineClass *mc = MACHINE_CLASS(oc);
+    AmdPspMachineClass *apmc = AMD_PSP_MACHINE_CLASS(oc);
+    apmc->gen = ZENTESLA;
+    psp_zen_machine_common_init(mc);
+}
+
 static const TypeInfo amd_psp_machine_types[] = {
     {
         .name           = MACHINE_TYPE_NAME("amd-psp-zen"),
@@ -137,6 +145,10 @@ static const TypeInfo amd_psp_machine_types[] = {
         .name           = MACHINE_TYPE_NAME("amd-psp-zen3"),
         .parent         = TYPE_AMD_PSP_MACHINE,
         .class_init     = psp_zen_three_machine_init,
+    }, {
+        .name           = MACHINE_TYPE_NAME("amd-psp-zentesla"),
+        .parent         = TYPE_AMD_PSP_MACHINE,
+        .class_init     = psp_zen_tesla_machine_init,
     }, {
         .name           = TYPE_AMD_PSP_MACHINE,
         .parent         = TYPE_MACHINE,
