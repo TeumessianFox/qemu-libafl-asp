@@ -55,15 +55,20 @@ git merge remotes/qemu-asp/zentesla
 ```
 Solve merge conflicts!
 
+7. Create branch for additional patches
+```
+git checkout -b additional_patches
+```
+
+8. Copy README.md from merge\_instructions branch into main
+
+9. Apply additinal patches
+
 7. Merge into main branch
 ```
 git checkout main
-git merge merged_qemu_asp
+git merge merged_qemu_asp --allow-unrelated-histories
 ```
-
-## Extra patches
-
-Apply additional patches to the main branch!
 
 ## License
 
