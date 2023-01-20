@@ -40,6 +40,16 @@
 /*     .impl.max_access_size = 4, */
 /* }; */
 
+//// +++ Begin ASPFuzz code +++
+MemoryRegion *asp_smn_mr = NULL;
+void aspfuzz_write_smn_flash(hwaddr addr, hwaddr len, const void* ptr);
+void aspfuzz_write_smn_flash(hwaddr addr, hwaddr len, const void* ptr){
+    const uint8_t *buf = ptr;
+    uint8_t *ram_ptr = qemu_map_ram_ptr(asp_smn_mr->ram_block, addr);
+    memcpy(ram_ptr, buf, len);
+}
+//// +++ End ASPFuzz code +++
+
 static void psp_smn_flash_realize(DeviceState *dev, Error **errp)
 {
     PSPSmnFlashState *s = PSP_SMN_FLASH(dev);
@@ -57,6 +67,11 @@ static void psp_smn_flash_realize(DeviceState *dev, Error **errp)
         qemu_log_mask(LOG_GUEST_ERROR, "Could not load flash image provided for smn\n");
         exit(1);
     }
+
+    //// +++ Begin ASPFuzz code +++
+    asp_smn_mr = &s->psp_smn_flash;
+    //// +++ End ASPFuzz code +++
+
 }
 
 static Property psp_smn_flash_properties[] = {
