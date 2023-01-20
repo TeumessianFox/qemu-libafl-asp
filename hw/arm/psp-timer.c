@@ -35,10 +35,35 @@
 
 static char ident[] = "PSP Timer";
 
+//// +++ Begin ASPFuzz code +++
+uint64_t aspfuzz_timer_count_0 = 0;
+uint64_t aspfuzz_timer_control_0 = 0;
+uint64_t aspfuzz_timer_count_1 = 0;
+uint64_t aspfuzz_timer_control_1 = 0;
+//// +++ End ASPFuzz code +++
+
 static uint64_t psp_timer_read(void *opaque, hwaddr offset, unsigned int size) {
     PSPTimerState *s = PSP_TIMER(opaque);
     uint64_t val;
     hwaddr phys_base = s->psp_timer_iomem.addr;
+
+    //// +++ Begin ASPFuzz code +++
+    if (phys_base == 0x3010400) {
+        if (aspfuzz_timer_count_0 != s->psp_timer_count) {
+            s->psp_timer_count = aspfuzz_timer_count_0;
+        }
+        if (aspfuzz_timer_control_0 != s->psp_timer_control) {
+            s->psp_timer_control = aspfuzz_timer_control_0;
+        }
+    } else {
+        if (aspfuzz_timer_count_1 != s->psp_timer_count) {
+            s->psp_timer_count = aspfuzz_timer_count_1;
+        }
+        if (aspfuzz_timer_control_1 != s->psp_timer_control) {
+            s->psp_timer_control = aspfuzz_timer_control_1;
+        }
+    }
+    //// +++ End ASPFuzz code +++
 
     if (size != sizeof(uint32_t)) {
         qemu_log_mask(LOG_UNIMP,
@@ -64,6 +89,16 @@ static uint64_t psp_timer_read(void *opaque, hwaddr offset, unsigned int size) {
             break;
     }
 
+    //// +++ Begin ASPFuzz code +++
+    if (phys_base == 0x3010400) {
+        aspfuzz_timer_count_0 = s->psp_timer_count;
+        aspfuzz_timer_control_0 = s->psp_timer_control;
+    } else {
+        aspfuzz_timer_count_1 = s->psp_timer_count;
+        aspfuzz_timer_control_1 = s->psp_timer_control;
+    }
+    //// +++ End ASPFuzz code +++
+
     return val;
 }
 
@@ -73,6 +108,23 @@ static void psp_timer_write(void *opaque, hwaddr offset, uint64_t val,
     hwaddr phys = s->psp_timer_iomem.addr;
     phys += offset;
 
+    //// +++ Begin ASPFuzz code +++
+    if (phys == 0x3010400) {
+        if (aspfuzz_timer_count_0 != s->psp_timer_count) {
+            s->psp_timer_count = aspfuzz_timer_count_0;
+        }
+        if (aspfuzz_timer_control_0 != s->psp_timer_control) {
+            s->psp_timer_control = aspfuzz_timer_control_0;
+        }
+    } else {
+        if (aspfuzz_timer_count_1 != s->psp_timer_count) {
+            s->psp_timer_count = aspfuzz_timer_count_1;
+        }
+        if (aspfuzz_timer_control_1 != s->psp_timer_control) {
+            s->psp_timer_control = aspfuzz_timer_control_1;
+        }
+    }
+    //// +++ End ASPFuzz code +++
 
     if (size != sizeof(uint32_t) && size != sizeof(uint8_t)) {
         qemu_log_mask(LOG_UNIMP,
@@ -99,8 +151,18 @@ static void psp_timer_write(void *opaque, hwaddr offset, uint64_t val,
                           "offset=0x%" HWADDR_PRIx " value 0x%lx\n", offset,
                           val);
             break;
-
     }
+
+    //// +++ Begin ASPFuzz code +++
+    if (phys == 0x3010400) {
+        aspfuzz_timer_count_0 = s->psp_timer_count;
+        aspfuzz_timer_control_0 = s->psp_timer_control;
+    } else {
+        aspfuzz_timer_count_1 = s->psp_timer_count;
+        aspfuzz_timer_control_1 = s->psp_timer_control;
+    }
+    //// +++ End ASPFuzz code +++
+
 }
 
 
