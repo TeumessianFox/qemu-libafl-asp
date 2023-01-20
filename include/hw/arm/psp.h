@@ -37,6 +37,8 @@
 #define TYPE_AMD_PSP_ZEN "amd-psp-zen_one"
 #define TYPE_AMD_PSP_ZEN_PLUS "amd-psp-zen_plus"
 #define TYPE_AMD_PSP_ZEN_TWO "amd-psp-zen_two"
+#define TYPE_AMD_PSP_ZEN_THREE "amd-psp-zen_three"
+#define TYPE_AMD_PSP_ZEN_TESLA "amd-psp-zen_tesla"
 
 #define PSP_SMN_CTRL_BASE 0x03220000
 #define PSP_X86_CTRL1_BASE 0x03230000
@@ -80,6 +82,8 @@ typedef enum PspGeneration {
   ZEN = 0,
   ZEN_PLUS,
   ZEN2,
+  ZEN3,
+  ZENTESLA,
 } PspGeneration;
 
 typedef struct AmdPspConfiguration {

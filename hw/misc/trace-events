@@ -28,7 +28,7 @@ ccp_ctrl_read(uint64_t off, uint32_t val) "offset=0x%"PRIx64" value=0x%"PRIx32
 ccp_ctrl_write(uint64_t off, uint32_t val) "offset=0x%"PRIx64" value=0x%"PRIx32
 ccp_config_read(uint64_t off, uint32_t val) "offset=0x%"PRIx64" value=0x%"PRIx32
 ccp_config_write(uint64_t off, uint32_t val) "offset=0x%"PRIx64" value=0x%"PRIx32
-ccp_passthrough(uint32_t len, uint64_t src, uint64_t dest) "len=0x%"PRIx32" src=0x%"PRIx64" dest=0x%"PRIx64
+ccp_passthrough(uint64_t src, uint64_t dest, uint32_t len) "src=0x%"PRIx64" dest=0x%"PRIx64" len=0x%"PRIx32
 ccp_perform_sha_256(uint32_t len, uint64_t src) "len=0x%"PRIx32" src=0x%"PRIx64
 ccp_zlib(uint64_t src, uint64_t dst, uint32_t len, unsigned int src_type, unsigned int dst_type, bool init, bool eom) "src=0x%"PRIx64" dest=0x%"PRIx64" len=0x%"PRIx32" src_type=%d dst_type=%d init=%d eom=%d"
 ccp_sha(uint64_t src, uint32_t len, uint64_t sha_len, bool init, bool eom, uint32_t ctx_id) "src=0x%"PRIx64" len=0x%"PRIx32" sha_len=0x%"PRIx64" init=%d eom=%d ctx_id=0x%"PRIu32

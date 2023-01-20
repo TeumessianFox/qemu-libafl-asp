@@ -69,6 +69,14 @@ static PspSmnConfiguration psp_smn_configuration[] = {
         .desc = "psp smn zen2",
         .flash = 0x44000000,
     },
+    [ZEN3] = {
+        .desc = "psp smn zen3",
+        .flash = 0x44000000,
+    },
+    [ZENTESLA] = {
+        .desc = "psp smn zentesla",
+        .flash = 0x0a000000,
+    },
 };
 
 const char* ident = "SMN Control";
@@ -254,6 +262,14 @@ static void psp_smn_zentwo_class_init(ObjectClass *oc, void *data) {
     psp_smn_common_class_init(oc, ZEN2);
 }
 
+static void psp_smn_zenthree_class_init(ObjectClass *oc, void *data) {
+    psp_smn_common_class_init(oc, ZEN3);
+}
+
+static void psp_smn_zentesla_class_init(ObjectClass *oc, void *data) {
+    psp_smn_common_class_init(oc, ZENTESLA);
+}
+
 static const TypeInfo amd_psp_smn_types[] = {
     {
         .name          = TYPE_PSP_SMN_ZEN,
@@ -269,6 +285,16 @@ static const TypeInfo amd_psp_smn_types[] = {
         .name          = TYPE_PSP_SMN_ZEN2,
         .parent        = TYPE_PSP_SMN,
         .class_init    = psp_smn_zentwo_class_init,
+    },
+    {
+        .name          = TYPE_PSP_SMN_ZEN3,
+        .parent        = TYPE_PSP_SMN,
+        .class_init    = psp_smn_zenthree_class_init,
+    },
+    {
+        .name          = TYPE_PSP_SMN_ZENTESLA,
+        .parent        = TYPE_PSP_SMN,
+        .class_init    = psp_smn_zentesla_class_init,
     },
     {
         .name          = TYPE_PSP_SMN,

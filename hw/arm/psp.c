@@ -40,7 +40,9 @@
 static const char * amd_psp_gen_ident[] = {
     [ZEN] = "Ryzen Zen",
     [ZEN_PLUS] = "Ryzen Zen Plus",
-    [ZEN2] = "Ryzen Zen 2"
+    [ZEN2] = "Ryzen Zen 2",
+    [ZEN3] = "Ryzen Zen 3",
+    [ZENTESLA] = "Ryzen Zen Tesla",
 };
 
 /* The base class */
@@ -261,7 +263,6 @@ static void amd_psp_zen_two_class_init(ObjectClass *oc, void *data) {
 
     dc->desc = amd_psp_gen_ident[ZEN2];
 
-    // TODO set/verify values for Zen 2
     pspc->sram_size = (320 * 1024);
     pspc->sram_base = 0x0;
 
@@ -273,6 +274,45 @@ static void amd_psp_zen_two_class_init(ObjectClass *oc, void *data) {
     pspc->smn_container_base = 0x01000000;
 
     pspc->sts_base = 0x032000d8;
+}
+
+static void amd_psp_zen_three_class_init(ObjectClass *oc, void *data) {
+    DeviceClass *dc = DEVICE_CLASS(oc);
+    AmdPspClass *pspc = AMD_PSP_CLASS(oc);
+
+    dc->desc = amd_psp_gen_ident[ZEN3];
+
+    pspc->sram_size = (320 * 1024);
+    pspc->sram_base = 0x0;
+
+    pspc->rom_size = (64 * 1024);
+    pspc->rom_base = 0xffff0000;
+
+    pspc->smn_type = TYPE_PSP_SMN_ZEN3;
+    pspc->smn_ctrl_base = 0x03220000;
+    pspc->smn_container_base = 0x01000000;
+
+    pspc->sts_base = 0x032000d8;
+}
+
+static void amd_psp_zen_tesla_class_init(ObjectClass *oc, void *data) {
+    DeviceClass *dc = DEVICE_CLASS(oc);
+    AmdPspClass *pspc = AMD_PSP_CLASS(oc);
+
+    dc->desc = amd_psp_gen_ident[ZENTESLA];
+
+    pspc->sram_size = (256 * 1024);
+    pspc->sram_base = 0x0;
+
+    pspc->rom_size = (64 * 1024);
+    pspc->rom_base = 0xffff0000;
+
+    pspc->smn_type = TYPE_PSP_SMN_ZENTESLA;
+    pspc->smn_ctrl_base = 0x03220000;
+    pspc->smn_container_base = 0x01000000;
+
+
+    pspc->sts_base = 0x032000f0;
 }
 
 static const TypeInfo amd_psp_types[] = {
@@ -288,6 +328,14 @@ static const TypeInfo amd_psp_types[] = {
         .name           = TYPE_AMD_PSP_ZEN_TWO,
         .parent         = TYPE_AMD_PSP,
         .class_init     = amd_psp_zen_two_class_init,
+    }, {
+        .name           = TYPE_AMD_PSP_ZEN_THREE,
+        .parent         = TYPE_AMD_PSP,
+        .class_init     = amd_psp_zen_three_class_init,
+    }, {
+        .name           = TYPE_AMD_PSP_ZEN_TESLA,
+        .parent         = TYPE_AMD_PSP,
+        .class_init     = amd_psp_zen_tesla_class_init,
     }, {
         .name           = TYPE_AMD_PSP,
         .parent         = TYPE_DEVICE,
