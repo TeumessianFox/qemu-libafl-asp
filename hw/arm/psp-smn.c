@@ -39,6 +39,18 @@
 
 /* PSPSmnCTRL: Controller, attaches SMN devices on demand? */
 
+//// +++ Begin ASPFuzz code +++
+uint32_t aspfuzz_smn_slots[32] = { 0 };
+PSPSmnState *aspfuzz_smn_state = 0;
+
+void aspfuzz_smn_update_slot(uint32_t idx);
+void aspfuzz_smn_update_slot(uint32_t idx) {
+    PSPSmnAddr addr = aspfuzz_smn_slots[idx];
+    memory_region_set_alias_offset(&aspfuzz_smn_state->psp_smn_containers[idx], addr);
+    trace_psp_smn_update_slot(idx, addr);
+}
+//// +++ End ASPFuzz code +++
+
 typedef struct PspSmnClass {
     /*< private >*/
     SysBusDeviceClass parent_class;
@@ -87,6 +99,10 @@ static void psp_smn_update_slot(PSPSmnState *smn, uint32_t idx) {
     memory_region_set_alias_offset(&smn->psp_smn_containers[idx], addr);
     trace_psp_smn_update_slot(idx, addr);
 
+    //// +++ Begin ASPFuzz code +++
+    aspfuzz_smn_state = (void *)smn;
+    aspfuzz_smn_slots[idx] = addr;
+    //// +++ End ASPFuzz code +++
 }
 
 static void psp_smn_write(void *opaque, hwaddr offset, uint64_t value,
